@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- 语言等级 -->
+    <LangVersion>latest</LangVersion>
+    <!-- 启用非安全代码 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- 编译输出路径 -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- 包版本号中心管理 -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
