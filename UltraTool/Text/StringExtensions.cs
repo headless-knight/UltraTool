@@ -45,7 +45,7 @@ public static class StringExtensions
     /// <returns>是否全为空白符</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsBlank(this string str) => str.All(char.IsWhiteSpace);
+    public static bool IsWhiteSpace(this string str) => str.All(char.IsWhiteSpace);
 
     /// <summary>
     /// 判断字符串是否非全空白符
@@ -54,7 +54,7 @@ public static class StringExtensions
     /// <returns>是否非全空白符</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsNotBlank(this string str) => !str.All(char.IsWhiteSpace);
+    public static bool IsNotWhiteSpace(this string str) => !str.All(char.IsWhiteSpace);
 
     /// <summary>
     /// 判断字符串是否为null或空串
@@ -81,7 +81,7 @@ public static class StringExtensions
     /// <returns>是否为null或空白符串</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsNullOrBlank([NotNullWhen(false)] this string? str) => string.IsNullOrWhiteSpace(str);
+    public static bool IsNullOrWhiteSpace([NotNullWhen(false)] this string? str) => string.IsNullOrWhiteSpace(str);
 
     /// <summary>
     /// 判断字符串是否不为null或空白符串
@@ -90,7 +90,7 @@ public static class StringExtensions
     /// <returns>是否不为null或空白符串</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsNotNullOrBlank([NotNullWhen(true)] this string? str) => !string.IsNullOrWhiteSpace(str);
+    public static bool IsNotNullOrWhiteSpace([NotNullWhen(true)] this string? str) => !string.IsNullOrWhiteSpace(str);
 
     /// <summary>
     /// 将字符串转为字节数组
