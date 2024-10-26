@@ -22,7 +22,7 @@ public static class NullableExtensions
         [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : class =>
-        value ?? throw new ArgumentNullException(paramName ?? nameof(value), "传入参数不能为空");
+        value ?? throw new ArgumentNullException(paramName, "传入参数不能为空");
 
     /// <summary>
     /// 调用参数必须为非null，否则抛出异常
@@ -36,5 +36,5 @@ public static class NullableExtensions
         [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : struct =>
-        value ?? throw new ArgumentNullException(paramName ?? nameof(value), "传入参数不能为空");
+        value ?? throw new ArgumentNullException(paramName, "传入参数不能为空");
 }

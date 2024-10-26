@@ -6,7 +6,5 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- 编译输出路径 -->
     <UseArtifactsOutput>true</UseArtifactsOutput>
-    <!-- 包版本号中心管理 -->
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 </Project>

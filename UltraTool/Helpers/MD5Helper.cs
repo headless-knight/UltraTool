@@ -1,8 +1,8 @@
-﻿using System.Buffers;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using JetBrains.Annotations;
 using UltraTool.Collections;
+using UltraTool.Text;
 
 namespace UltraTool.Helpers;
 
@@ -58,18 +58,8 @@ public static class MD5Helper
     /// <returns></returns>
     public static int Compute(string source, Span<byte> destination, Encoding? encoding = null)
     {
-        encoding ??= Encoding.UTF8;
-        var bytesCount = encoding.GetByteCount(source);
-        var bytes = ArrayPool<byte>.Shared.Rent(bytesCount);
-        try
-        {
-            encoding.GetBytes(source, bytes);
-            return Compute(bytes, destination);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(bytes, true);
-        }
+        using var bytes = source.GetBytesPooled(encoding);
+        return Compute(bytes.ReadOnlySpan, destination);
     }
 
     /// <summary>

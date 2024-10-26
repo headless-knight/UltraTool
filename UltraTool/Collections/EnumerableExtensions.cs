@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace UltraTool.Collections;
 
@@ -8,7 +10,270 @@ namespace UltraTool.Collections;
 [PublicAPI]
 public static class EnumerableExtensions
 {
+    /// <summary>
+    /// 判断序列中是否有为null的元素
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <returns>是否有为null的元素</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAnyNull<T>([InstantHandle] this IEnumerable<T?> source) =>
+        source.Any(static item => item == null);
+
+    /// <summary>
+    /// 判断序列中是否全为null的元素
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <returns>是否全为null的元素</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAllNull<T>([InstantHandle] this IEnumerable<T?> source) =>
+        source.All(static item => item == null);
+
+    #region 遍历操作
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="action">遍历操作，入参(元素)</param>
+    public static void ForEach<T>([InstantHandle] this IEnumerable<T> source, Action<T> action)
+    {
+        foreach (var item in source)
+        {
+            action.Invoke(item);
+        }
+    }
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="action">遍历操作，入参(元素,索引)</param>
+    public static void ForEach<T>([InstantHandle] this IEnumerable<T> source, Action<T, int> action)
+    {
+        var index = 0;
+        foreach (var item in source)
+        {
+            action.Invoke(item, index++);
+        }
+    }
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="action">遍历操作，入参(元素,额外参数)</param>
+    /// <param name="args">额外参数</param>
+    public static void ForEach<T, TArgs>([InstantHandle] this IEnumerable<T> source,
+        [RequireStaticDelegate] Action<T, TArgs> action, TArgs args)
+    {
+        foreach (var item in source)
+        {
+            action.Invoke(item, args);
+        }
+    }
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="action">遍历操作，入参(元素,索引,额外参数)</param>
+    /// <param name="args">额外参数</param>
+    public static void ForEach<T, TArgs>([InstantHandle] this IEnumerable<T> source,
+        [RequireStaticDelegate] Action<T, int, TArgs> action, TArgs args)
+    {
+        var index = 0;
+        foreach (var item in source)
+        {
+            action.Invoke(item, index++, args);
+        }
+    }
+
+    /// <summary>
+    /// 返回一个带索引的序列
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <returns>(元素,索引)序列</returns>
+    [Pure, LinqTunnel]
+    public static IEnumerable<(int, T)> WithIndex<T>(this IEnumerable<T> source)
+    {
+        var index = 0;
+        foreach (var item in source) yield return (index++, item);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// 源序列每两个元素之间插入分隔元素，返回新序列
+    /// </summary>
+    /// <param name="source">源序列</param>
+    /// <param name="separator">分隔元素</param>
+    /// <returns>操作后序列</returns>
+    [LinqTunnel]
+    public static IEnumerable<T> Join<T>(this IEnumerable<T> source, T separator)
+    {
+        using var enumerator = source.GetEnumerator();
+        var moveNext = enumerator.MoveNext();
+        while (moveNext)
+        {
+            yield return enumerator.Current;
+            moveNext = enumerator.MoveNext();
+            if (moveNext) yield return separator;
+        }
+    }
+
+    /// <summary>
+    /// 根据元素出现次数，返回一个{元素:个数}的字典
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <returns>{元素:个数}字典</returns>
+    [Pure]
+    public static Dictionary<T, int> CountMap<T>([InstantHandle] this IEnumerable<T> source) where T : notnull
+    {
+        var dict = new Dictionary<T, int>();
+        foreach (var item in source)
+        {
+            dict[item] = dict.GetValueOrDefault(item, 0) + 1;
+        }
+
+        return dict;
+    }
+
+    /// <summary>
+    /// 根据元素出现次数，返回一个{元素:个数}的字典
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="result">{元素:个数}字典</param>
+    public static void CountMap<T, TDictionary>([InstantHandle] this IEnumerable<T> source,
+        out TDictionary result) where T : notnull where TDictionary : IDictionary<T, int>, new()
+    {
+        result = new TDictionary();
+        foreach (var item in source)
+        {
+            if (result.TryGetValue(item, out var count))
+            {
+                result[item] = count + 1;
+            }
+            else
+            {
+                result.Add(item, 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 尝试从序列中查找符合条件的元素
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="predicate">查找条件，入参(遍历元素)</param>
+    /// <param name="found">找到的元素</param>
+    /// <returns>是否成功找到</returns>
+    public static bool TryFind<T>([InstantHandle] this IEnumerable<T> source, Func<T, bool> predicate,
+        [MaybeNullWhen(false)] out T found)
+    {
+        foreach (var item in source)
+        {
+            if (!predicate.Invoke(item)) continue;
+
+            found = item;
+            return true;
+        }
+
+        found = default;
+        return false;
+    }
+
+    /// <summary>
+    /// 尝试从序列中查找符合条件的元素
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="predicate">查找条件，入参(遍历元素,额外参数)</param>
+    /// <param name="found">找到的元素</param>
+    /// <param name="args">额外参数</param>
+    /// <returns>是否成功找到</returns>
+    public static bool TryFind<T, TArgs>([InstantHandle] this IEnumerable<T> source,
+        [RequireStaticDelegate] Func<T, TArgs, bool> predicate,
+        [MaybeNullWhen(false)] out T found, TArgs args)
+    {
+        foreach (var item in source)
+        {
+            if (!predicate.Invoke(item, args)) continue;
+
+            found = item;
+            return true;
+        }
+
+        found = default;
+        return false;
+    }
+
+    #region 嵌套字典
+
+    /// <summary>
+    /// 将序列转为指定两个键的嵌套字典
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键1选择器，入参(遍历值)</param>
+    /// <param name="key2Selector">键2选择器，入参(遍历值)</param>
+    /// <returns>{键1:{键2：值}}</returns>
+    [Pure]
+    public static Dictionary<TKey1, Dictionary<TKey2, TValue>> ToNestedDictionary<TKey1, TKey2, TValue>(
+        [InstantHandle] this IEnumerable<TValue> source, Func<TValue, TKey1> keySelector,
+        Func<TValue, TKey2> key2Selector) where TKey1 : notnull where TKey2 : notnull
+    {
+        var dict = new Dictionary<TKey1, Dictionary<TKey2, TValue>>();
+        foreach (var item in source)
+        {
+            var key1 = keySelector.Invoke(item);
+            var nested = dict.GetOrCreate(key1);
+            var key2 = key2Selector.Invoke(item);
+            nested.Add(key2, item);
+        }
+
+        return dict;
+    }
+
+    /// <summary>
+    /// 键序列转为指定两个键嵌套的字典
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="key1Selector">键1选择器，入参(遍历值)</param>
+    /// <param name="key2Selector">键2选择器，入参(遍历值)</param>
+    /// <param name="valueSelector">值选择器，入参(遍历值)</param>
+    /// <returns>{键1:{键2：值}字典}字典</returns>
+    public static Dictionary<TKey1, Dictionary<TKey2, TValue>> ToNestedDictionary<TSource, TKey1, TKey2, TValue>(
+        [InstantHandle] this IEnumerable<TSource> source, Func<TSource, TKey1> key1Selector,
+        Func<TSource, TKey2> key2Selector, Func<TSource, TValue> valueSelector)
+        where TKey1 : notnull where TKey2 : notnull
+    {
+        var dict = new Dictionary<TKey1, Dictionary<TKey2, TValue>>();
+        foreach (var item in source)
+        {
+            var key1 = key1Selector.Invoke(item);
+            var nested = dict.GetOrCreate(key1);
+            var key2 = key2Selector.Invoke(item);
+            nested.Add(key2, valueSelector.Invoke(item));
+        }
+
+        return dict;
+    }
+
+    #endregion
+
 #if !NET6_0_OR_GREATER
+    /// <summary>
+    /// 获取序列第一个元素，若序列为空则返回默认值
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="defaultValue">默认值</param>
+    /// <returns>第一个元素或默认值</returns>
+    public static T FirstOrDefault<T>(this IEnumerable<T> source, T defaultValue)
+    {
+        using var enumerator = source.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : defaultValue;
+    }
+
     /// <summary>
     /// 尝试不使用枚举器获取序列元素数量
     /// </summary>

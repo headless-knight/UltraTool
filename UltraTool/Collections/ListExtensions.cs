@@ -91,4 +91,15 @@ public static class ListExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T GetValueOrDefault<T>(this IReadOnlyList<T> list, int index, T defaultValue) =>
         list.TryGetValue(index, out var got) ? got : defaultValue;
+
+    /// <summary>
+    /// 交换两个索引位置的数据
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index1">索引1</param>
+    /// <param name="index2">索引2</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Swap<T>(this IList<T> list, int index1, int index2) =>
+        (list[index1], list[index2]) = (list[index2], list[index1]);
 }
