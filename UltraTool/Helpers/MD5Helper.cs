@@ -2,7 +2,6 @@
 using System.Text;
 using JetBrains.Annotations;
 using UltraTool.Collections;
-using UltraTool.Text;
 
 namespace UltraTool.Helpers;
 
@@ -56,9 +55,11 @@ public static class MD5Helper
     /// <param name="destination">输出跨度</param>
     /// <param name="encoding">源字符串编码，输入null时使用<see cref="Encoding.UTF8"/></param>
     /// <returns></returns>
-    public static int Compute(string source, Span<byte> destination, Encoding? encoding = null)
+    public static int Compute(ReadOnlySpan<char> source, Span<byte> destination, Encoding? encoding = null)
     {
-        using var bytes = source.GetBytesPooled(encoding);
+        encoding ??= Encoding.UTF8;
+        using var bytes = PooledArray.Get<byte>(encoding.GetByteCount(source));
+        encoding.GetBytes(source, bytes.Span);
         return Compute(bytes.ReadOnlySpan, destination);
     }
 

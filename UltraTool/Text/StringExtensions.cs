@@ -128,19 +128,4 @@ public static class StringExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void GetBytes(this string str, Encoding encoding, Span<byte> bytes) =>
         encoding.GetBytes(str, bytes);
-
-    /// <summary>
-    /// 将字符串转为池化字节数组
-    /// </summary>
-    /// <param name="str">字符串</param>
-    /// <param name="encoding">编码，默认为UTF8</param>
-    /// <returns>池化字节数组</returns>
-    [Pure, MustDisposeResource]
-    public static PooledArray<byte> GetBytesPooled(this string str, Encoding? encoding = null)
-    {
-        encoding ??= Encoding.UTF8;
-        var bytes = PooledArray.Get<byte>(encoding.GetByteCount(str));
-        encoding.GetBytes(str, bytes.Span);
-        return bytes;
-    }
 }

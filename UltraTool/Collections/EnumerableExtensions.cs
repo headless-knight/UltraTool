@@ -261,6 +261,29 @@ public static class EnumerableExtensions
 
     #endregion
 
+    /// <summary>
+    /// 尝试在不使用枚举器的情况下获取数量，否则返回0
+    /// </summary>
+    /// <param name="source">源序列</param>
+    /// <returns>元素数量或0</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetCountOrZero<T>([NoEnumeration] this IEnumerable<T> source) =>
+        source.TryGetNonEnumeratedCount(out var count) ? count : 0;
+
+    /// <summary>指定数组容量，将序列转为数组</summary>
+    internal static T[] ToArrayWithCapacity<T>([InstantHandle] this IEnumerable<T> source, int capacity)
+    {
+        var array = ArrayHelper.AllocateUninitializedArray<T>(capacity);
+        var index = 0;
+        foreach (var item in source)
+        {
+            array[index++] = item;
+        }
+
+        return array;
+    }
+
 #if !NET6_0_OR_GREATER
     /// <summary>
     /// 获取序列第一个元素，若序列为空则返回默认值
@@ -289,9 +312,9 @@ public static class EnumerableExtensions
                 count = coll.Count;
                 return true;
             }
-            case IReadOnlyCollection<T> roColl:
+            case IReadOnlyCollection<T> coll:
             {
-                count = roColl.Count;
+                count = coll.Count;
                 return true;
             }
             default:

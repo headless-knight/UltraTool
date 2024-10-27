@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraTool", "UltraTool\UltraTool.csproj", "{57E08D5A-4003-4087-BFCA-A1781A279A24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraTool.Tests", "UltraTool.Tests\UltraTool.Tests.csproj", "{A714E2EE-01D4-463A-96B6-294581302529}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{57E08D5A-4003-4087-BFCA-A1781A279A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57E08D5A-4003-4087-BFCA-A1781A279A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57E08D5A-4003-4087-BFCA-A1781A279A24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A714E2EE-01D4-463A-96B6-294581302529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A714E2EE-01D4-463A-96B6-294581302529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A714E2EE-01D4-463A-96B6-294581302529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A714E2EE-01D4-463A-96B6-294581302529}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

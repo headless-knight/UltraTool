@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <!-- 语言等级 -->
-    <LangVersion>latest</LangVersion>
+    <LangVersion>12</LangVersion>
     <!-- 启用非安全代码 -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- 编译输出路径 -->

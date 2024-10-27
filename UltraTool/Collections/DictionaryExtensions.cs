@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using UltraTool.Randoms;
 
 namespace UltraTool.Collections;
 
@@ -171,4 +172,23 @@ public static class DictionaryExtensions
         onCreated.Invoke(key, args, value);
         return value;
     }
+
+    /// <summary>
+    /// 交换两个键对应的值
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key1">键1</param>
+    /// <param name="key2">键2</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Swap<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key1, TKey key2) =>
+        (dict[key1], dict[key2]) = (dict[key2], dict[key1]);
+
+    /// <summary>
+    /// 将字典中元素顺序随机打乱
+    /// </summary>
+    /// <param name="dict">字典</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Shuffle<TKey, TValue>(this IDictionary<TKey, TValue> dict) => RandomHelper.Shared.Shuffle(dict);
 }
