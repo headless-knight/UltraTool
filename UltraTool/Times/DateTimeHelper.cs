@@ -147,4 +147,77 @@ public static class DateTimeHelper
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetDayAmount(int year, int month) => DateTime.DaysInMonth(year, month);
+
+    /// <summary>
+    /// 判断时刻是否为上午
+    /// </summary>
+    /// <param name="hour">时</param>
+    /// <returns>是否为上午</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAm(int hour) => hour < NoonHour;
+
+    /// <summary>
+    /// 判断时刻是否为下午
+    /// </summary>
+    /// <param name="hour">时</param>
+    /// <returns>是否为下午</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsPm(int hour) => hour >= NoonHour;
+
+    #region 年月日判断
+
+    /// <summary>
+    /// 判断是否为有效月日
+    /// </summary>
+    /// <param name="month">月份</param>
+    /// <param name="day">天数</param>
+    /// <returns>是否为有效月日</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsValidMonthDay(int month, int day) => month switch
+    {
+        1 or 3 or 5 or 7 or 8 or 10 or 12 => day <= 31,
+        4 or 6 or 9 or 11 => day <= 30,
+        2 => day <= 29,
+        _ => false
+    };
+
+    /// <summary>
+    /// 判断是否为有效日期
+    /// </summary>
+    /// <param name="year">年份</param>
+    /// <param name="month">月份</param>
+    /// <param name="day">天数</param>
+    /// <returns>是否为有效日期</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsValidDate(int year, int month, int day) => month == 2
+        ? (IsLeapYear(year) ? day <= 29 : day <= 28)
+        : IsValidMonthDay(month, day);
+
+    /// <summary>
+    /// 拼接日期为数字
+    /// </summary>
+    /// <param name="year">年份</param>
+    /// <param name="month">月份</param>
+    /// <param name="day">日期</param>
+    /// <returns>year * 10000 + month * 100 + day</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int SpliceDateNumber(int year, int month, int day) =>
+        year * 10000 + month * 100 + day;
+
+    /// <summary>
+    /// 分割日期数字
+    /// </summary>
+    /// <param name="date">year * 10000 + month * 100 + day</param>
+    /// <returns>(年份, 月份, 日期)</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (int Year, int Month, int Day) SplitDateNumber(int date) =>
+        (date / 10000, date / 100 % 100, date % 100);
+
+    #endregion
 }
