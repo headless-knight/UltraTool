@@ -229,7 +229,7 @@ public static class RandomExtensions
 
         if (charPool.Length <= 0)
         {
-            throw new ArgumentException("字符池不能为空", nameof(charPool));
+            throw new ArgumentException("Char pool must bot empty", nameof(charPool));
         }
 
         using var array = PooledArray.Get<char>(length, true);
@@ -428,46 +428,56 @@ public static class RandomExtensions
     /// <param name="random">随机实例</param>
     /// <param name="source">序列</param>
     /// <param name="count">抽取数量</param>
-    /// <returns>抽取结果列表</returns>
+    /// <returns>抽取结果数组</returns>
     [Pure]
     public static T[] NextItemsSample<T>(this Random random, [InstantHandle] IEnumerable<T> source, int count)
     {
-        // 无法获取长度
-        if (!source.TryGetNonEnumeratedCount(out var size))
+        // 抽取数量小于等于0，返回空数组
+        if (count <= 0) return [];
+
+        // 序列长度小于或等于抽取数量
+        if (source.TryGetNonEnumeratedCount(out var size) && size <= count)
         {
-            // 由于无法获取长度，则在内部调用一定会创建数组返回
-            return (T[])random.NextItemsSampleRaw(source, count);
+            // 返回序列的拷贝
+            return source.ToArray();
         }
 
-        // 长度大于或等于抽取数量，返回序列拷贝
-        if (size <= count) return source.ToArray();
-
+        // 拷贝一份数据，用于打乱抽取元素
         var array = source.ToArray();
-        // 抽取长度小于列表长度，因此内部调用一定会创建数组保存结果返回
-        return (T[])random.NextItemsSampleRaw(array, count);
+        // 长度小于抽取数量，返回数组
+        if (array.Length <= count) return array;
+
+        var result = ArrayHelper.AllocateUninitializedArray<T>(count);
+        var index = 0;
+        while (index < count)
+        {
+            var lastIndex = array.Length - 1 - index;
+            var next = random.Next(lastIndex + 1);
+            // 利用Shuffle类似逻辑实现不放回抽取
+            (result[index], array[next]) = (array[next], array[lastIndex]);
+            index++;
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// 不放回多次抽取元素原始实现
+    /// 不放回多次抽取元素<br/>
+    /// 当抽取数量大于或等于列表长度时，返回列表的拷贝<br/>
+    /// 当抽取数量小于列表长度时，将随机抽取，此过程可能改变输入列表元素顺序<br/>
+    /// 若不希望改变输入列表元素顺序，请使用<see cref="NextItemsSample{T}"/>
     /// </summary>
     /// <param name="random">随机实例</param>
-    /// <param name="source">元素序列</param>
+    /// <param name="list">列表</param>
     /// <param name="count">抽取数量</param>
-    /// <returns>抽取结果列表</returns>
-    /// <remarks>
-    /// 此方法会尝试将序列转为列表，若无法转换则创建并拷贝至数组<br/>
-    /// 若列表长度小于等于抽取数量，会直接返回列表<br/>
-    /// 若输入序列为列表，抽取过程会修改输入列表内容，若需保留原列表请使用<see cref="NextItemsSample{T}"/>
-    /// </remarks>
-    [MustUseReturnValue]
-    public static IList<T> NextItemsSampleRaw<T>(this Random random, [InstantHandle] IEnumerable<T> source, int count)
+    /// <returns>抽取结果数组</returns>
+    public static T[] NextItemsSampleShuffle<T>(this Random random, IList<T> list, int count)
     {
         // 抽取数量小于等于0，返回空数组
-        if (count <= 0) return Array.Empty<T>();
+        if (count <= 0) return [];
 
-        // 尝试将序列转为列表，否则拷贝至数组
-        var list = (source as IList<T>) ?? source.ToArray();
-        if (list.Count <= count) return list;
+        // 长度小于抽取数量，返回列表拷贝
+        if (list.Count <= count) return list.ToArray();
 
         var result = ArrayHelper.AllocateUninitializedArray<T>(count);
         var index = 0;
@@ -475,8 +485,9 @@ public static class RandomExtensions
         {
             var lastIndex = list.Count - 1 - index;
             var next = random.Next(lastIndex + 1);
-            // 利用Shuffle类似逻辑实现不放回抽取
-            (result[index], list[next]) = (list[next], list[lastIndex]);
+            // 利用Shuffle逻辑实现不放回抽取
+            result[index] = list[next];
+            list.Swap(next, lastIndex);
             index++;
         }
 
@@ -723,7 +734,7 @@ public static class RandomExtensions
             {
                 var accumulation = WeightsAccumulation(weightedList);
                 var i = 0;
-                using var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedList[indexes.Current];
@@ -735,7 +746,7 @@ public static class RandomExtensions
             {
                 var accumulation = WeightsAccumulation(weightedList);
                 var i = 0;
-                using var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedList[indexes.Current];
@@ -748,7 +759,7 @@ public static class RandomExtensions
                 var weightedArray = weightedItems.ToArray();
                 var accumulation = WeightsAccumulation(weightedArray);
                 var i = 0;
-                using var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedArray[indexes.Current];
@@ -757,6 +768,169 @@ public static class RandomExtensions
                 return result;
             }
         }
+    }
+
+    #endregion
+
+    #region 不放回带权随机抽取
+
+    /// <summary>
+    /// 不放回多次带权随机<br/>
+    /// 当抽取数量大于或等于序列长度时，返回元素序列
+    /// </summary>
+    /// <param name="random">随机实例</param>
+    /// <param name="itemWeights">{元素:权重}映射</param>
+    /// <param name="count">抽取次数</param>
+    /// <returns>抽取结果列数组</returns>
+    [Pure]
+    public static T[] NextWeightedSample<T>(this Random random,
+        [InstantHandle] IEnumerable<KeyValuePair<T, int>> itemWeights, int count)
+    {
+        if (count <= 0) return [];
+
+        if (itemWeights.TryGetNonEnumeratedCount(out var size) && size <= count)
+        {
+            return itemWeights.Select(pair => pair.Key).ToArrayWithCapacity(size);
+        }
+
+        var (totalWeight, linkedList) = ToWeightedLinked(itemWeights);
+        return count >= linkedList.Count
+            ? linkedList.Select(pair => pair.Key).ToArrayWithCapacity(linkedList.Count)
+            : NextWeightedSampleInternal(random, totalWeight, linkedList, count);
+    }
+
+    /// <summary>
+    /// 不放回多次带权随机<br/>
+    /// 当抽取数量大于或等于序列长度时，返回序列拷贝
+    /// </summary>
+    /// <param name="random">随机实例</param>
+    /// <param name="weightedItems">带权元素序列</param>
+    /// <param name="count">抽取次数</param>
+    /// <returns>抽取结果数组</returns>
+    [Pure]
+    public static T[] NextWeightedSample<T>(this Random random, [InstantHandle] IEnumerable<T> weightedItems, int count)
+        where T : IWeighted
+    {
+        if (count <= 0) return [];
+
+        if (weightedItems.TryGetNonEnumeratedCount(out var size) && size <= count)
+        {
+            return weightedItems.ToArrayWithCapacity(size);
+        }
+
+        var (totalWeight, linkedList) = ToWeightedLinked(weightedItems);
+        return count >= linkedList.Count
+            ? linkedList.ToArrayWithCapacity(linkedList.Count)
+            : NextWeightedSampleInternal(random, totalWeight, linkedList, count);
+    }
+
+    /// <summary>不放回多次带权随机，内部实现</summary>
+    private static T[] NextWeightedSampleInternal<T>(Random random, int totalWeight,
+        LinkedList<KeyValuePair<T, int>> linkedList, int count)
+    {
+        var result = ArrayHelper.AllocateUninitializedArray<T>(count);
+        var sampleCount = 0;
+        while (sampleCount < count && linkedList.Count > 0)
+        {
+            var next = random.Next(totalWeight);
+            var curWeight = 0;
+            var node = linkedList.First;
+            while (node != null)
+            {
+                curWeight += node.Value.Value;
+                // 抽取为当前权重
+                if (next < curWeight)
+                {
+                    result[sampleCount] = node.Value.Key;
+                    // 总权重值减去当前权重值
+                    totalWeight -= node.Value.Value;
+                    // 链表中移除此节点
+                    linkedList.Remove(node);
+                    break;
+                }
+
+                node = node.Next;
+            }
+
+            sampleCount++;
+        }
+
+        return result;
+    }
+
+    /// <summary>计算元素权重序列的总权重值，生成链表</summary>
+    private static (int, LinkedList<KeyValuePair<T, int>>) ToWeightedLinked<T>(
+        [InstantHandle] IEnumerable<KeyValuePair<T, int>> itemWeights)
+    {
+        var totalWeight = 0;
+        var linkedList = new LinkedList<KeyValuePair<T, int>>();
+        foreach (var pair in itemWeights)
+        {
+            if (pair.Value <= 0)
+            {
+                throw new ArgumentException("Weight must greater than 0", nameof(itemWeights));
+            }
+
+            totalWeight += pair.Value;
+            linkedList.AddLast(pair);
+        }
+
+        return (totalWeight, linkedList);
+    }
+
+    /// <summary>不放回多次带权随机，内部实现</summary>
+    private static T[] NextWeightedSampleInternal<T>(Random random, int totalWeight, LinkedList<T> linkedList,
+        int count) where T : IWeighted
+    {
+        var result = ArrayHelper.AllocateUninitializedArray<T>(count);
+        var sampleCount = 0;
+        while (sampleCount < count && linkedList.Count > 0)
+        {
+            var next = random.Next(totalWeight);
+            var curWeight = 0;
+            var node = linkedList.First;
+            while (node != null)
+            {
+                curWeight += node.Value.Weight;
+                // 抽取为当前权重
+                if (next < curWeight)
+                {
+                    result[sampleCount] = node.Value;
+                    // 总权重值减去当前权重值
+                    totalWeight -= node.Value.Weight;
+                    // 链表移除此节点
+                    linkedList.Remove(node);
+                    break;
+                }
+
+                node = node.Next;
+            }
+
+            sampleCount++;
+        }
+
+        return result;
+    }
+
+    /// <summary>计算权重元素序列的总权重值，生成链表</summary>
+    [Pure]
+    private static (int, LinkedList<T>) ToWeightedLinked<T>([InstantHandle] IEnumerable<T> weightedItems)
+        where T : IWeighted
+    {
+        var totalWeight = 0;
+        var linkedList = new LinkedList<T>();
+        foreach (var weightedItem in weightedItems)
+        {
+            if (weightedItem.Weight <= 0)
+            {
+                throw new ArgumentException("Weight must greater than 0", nameof(weightedItems));
+            }
+
+            totalWeight += weightedItem.Weight;
+            linkedList.AddLast(weightedItem);
+        }
+
+        return (totalWeight, linkedList);
     }
 
     #endregion
@@ -786,10 +960,8 @@ public static class RandomExtensions
         for (var i = keys.Length - 1; i > 0; i--)
         {
             var index = random.Next(i + 1);
-            var key1 = keys[i];
-            var key2 = keys[index];
             keys.Swap(i, index);
-            dict.Swap(key1, key2);
+            dict.Swap(keys[i], keys[index]);
         }
     }
 

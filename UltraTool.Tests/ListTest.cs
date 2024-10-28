@@ -1,3 +1,4 @@
+using System.Text.Json;
 using UltraTool.Collections;
 using Xunit.Abstractions;
 
@@ -44,5 +45,32 @@ public class ListTest(ITestOutputHelper output)
         var list = new List<int>();
         list.AddRange([1, 2, 3]);
         Assert.Equal([1, 2, 3], list.ToArray());
+    }
+
+    [Fact]
+    public void RemoveTest()
+    {
+        var list = new List<int>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        Assert.Equal(1, list.RemoveFirst());
+        var success = list.TryRemoveFirst(it => it > 2, out var removed);
+        Assert.True(success);
+        Assert.Equal(3, removed);
+        Assert.Equal(9, list.RemoveLast());
+        success = list.TryRemoveLast(it => it < 5, out removed);
+        Assert.True(success);
+        Assert.Equal(4, removed);
+    }
+
+    [Fact]
+    public void MiscTest()
+    {
+        var list = new List<int>([1, 2, 3]);
+        Assert.True(list.SequenceEqual(list.AsReadOnly()));
+        list.Swap(0, 1);
+        Assert.Equal(2, list[0]);
+        list.Shuffle();
+        output.WriteLine(JsonSerializer.Serialize(list));
+        Assert.True(list.Count >= 3);
+        Assert.True(new[] { 1, 2, 3 }.All(list.Contains));
     }
 }

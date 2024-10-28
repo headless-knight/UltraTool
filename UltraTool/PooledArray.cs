@@ -107,7 +107,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     public readonly ReadOnlySequence<T> ReadOnlySequence => new(_array ?? [], 0, Length);
 
-    /// <inheritdoc cref="IList{T}.Item"/>
+    /// <inheritdoc cref="IList{T}.this"/>
     public readonly T this[int index]
     {
         [Pure, CollectionAccess(CollectionAccessType.Read)]
