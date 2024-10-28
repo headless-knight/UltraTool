@@ -64,7 +64,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public int Length { get; }
 
     /// <inheritdoc />
-    readonly bool ICollection<T>.IsReadOnly => true;
+    readonly bool ICollection<T>.IsReadOnly => false;
 
     /// <inheritdoc />
     readonly int ICollection<T>.Count => Length;

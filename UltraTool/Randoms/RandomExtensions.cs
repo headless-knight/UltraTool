@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Runtime.CompilerServices;
+#if !NET6_0_OR_GREATER
+using System.Numerics;
 using System.Security.Cryptography;
+#endif
 using JetBrains.Annotations;
 using UltraTool.Collections;
 using UltraTool.Helpers;

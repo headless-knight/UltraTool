@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text;
 using JetBrains.Annotations;
+using UltraTool.Randoms;
 
 namespace UltraTool.Collections;
 
@@ -261,6 +263,94 @@ public static class EnumerableExtensions
 
     #endregion
 
+    #region 输出字符串
+
+    /// <summary>
+    /// 将序列内容输出为字符串
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <returns>字符串</returns>
+    [Pure]
+    public static string DumpAsString<T>([InstantHandle] this IEnumerable<T> source)
+    {
+        var sb = new StringBuilder();
+        sb.Append("{ ");
+        sb.AppendJoin(", ", source);
+        sb.Append(" }");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 将键值对序列内容输出为字符串
+    /// </summary>
+    /// <param name="pairs">键值对序列</param>
+    /// <returns>字符串</returns>
+    [Pure]
+    public static string DumpAsString<TKey, TValue>([InstantHandle] this IEnumerable<KeyValuePair<TKey, TValue>> pairs)
+    {
+        var sb = new StringBuilder();
+        sb.Append("{ ");
+        var count = 0;
+        foreach (var pair in pairs)
+        {
+            sb.Append(pair.Key);
+            sb.Append(':');
+            sb.Append(pair.Value);
+            sb.Append(", ");
+            count++;
+        }
+
+        if (count > 0)
+        {
+            sb.Length -= 2;
+        }
+
+        sb.Append(" }");
+        return sb.ToString();
+    }
+
+    #endregion
+
+    /// <summary>
+    /// 从源序列中随机位置开始取指定数量的元素
+    /// </summary>
+    /// <param name="source">源序列</param>
+    /// <param name="count">获取数量</param>
+    /// <returns>结果序列</returns>
+    [LinqTunnel]
+    public static IEnumerable<T> RandomSlice<T>([InstantHandle] this IEnumerable<T> source, int count)
+    {
+        if (!source.TryGetNonEnumeratedCount(out var collSize)) return source.RandomSliceInternal(count);
+
+        if (count >= collSize) return source;
+
+        var canSkip = collSize - count;
+        var skip = RandomHelper.Shared.Next(0, canSkip + 1);
+        return source.Skip(skip).Take(count);
+    }
+
+    /// <summary>从源序列中随机位置开始取指定数量的元素，内部实现</summary>
+    private static IEnumerable<T> RandomSliceInternal<T>([InstantHandle] this IEnumerable<T> source, int count)
+    {
+        var array = source.ToArray();
+        if (count >= array.Length)
+        {
+            foreach (var item in array)
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        var canSkip = array.Length - count;
+        var skip = RandomHelper.Shared.Next(0, canSkip + 1);
+        for (var i = skip; i < array.Length; i++)
+        {
+            yield return array[i];
+        }
+    }
+
     /// <summary>
     /// 尝试在不使用枚举器的情况下获取数量，否则返回0
     /// </summary>
@@ -291,7 +381,7 @@ public static class EnumerableExtensions
     /// <param name="source">序列</param>
     /// <param name="defaultValue">默认值</param>
     /// <returns>第一个元素或默认值</returns>
-    public static T FirstOrDefault<T>(this IEnumerable<T> source, T defaultValue)
+    public static T FirstOrDefault<T>([InstantHandle] this IEnumerable<T> source, T defaultValue)
     {
         using var enumerator = source.GetEnumerator();
         return enumerator.MoveNext() ? enumerator.Current : defaultValue;

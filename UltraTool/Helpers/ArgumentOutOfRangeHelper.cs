@@ -56,12 +56,41 @@ internal static class ArgumentOutOfRangeHelper
         string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
 
     /// <summary>
+    /// 如果值小于或等于0则抛出异常
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="paramName">参数名</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ThrowIfNegativeOrZero(int value,
+#if NETCOREAPP3_0_OR_GREATER
+        [CallerArgumentExpression("value")]
+#endif
+        string? paramName = null) => ThrowIfLessThanOrEqual(value, 0, paramName);
+
+    /// <summary>
     /// 如果值小于目标值则抛出异常
     /// </summary>
     /// <param name="value">值</param>
     /// <param name="other">目标值</param>
     /// <param name="paramName">参数名</param>
     public static void ThrowIfLessThan<T>(T value, T other,
+#if NETCOREAPP3_0_OR_GREATER
+        [CallerArgumentExpression("value")]
+#endif
+        string? paramName = null) where T : IComparable<T>
+    {
+        if (value.CompareTo(other) >= 0) return;
+
+        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be greater than or equal {other}");
+    }
+
+    /// <summary>
+    /// 如果值小于目标值则抛出异常
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="other">目标值</param>
+    /// <param name="paramName">参数名</param>
+    public static void ThrowIfLessThanOrEqual<T>(T value, T other,
 #if NETCOREAPP3_0_OR_GREATER
         [CallerArgumentExpression("value")]
 #endif
@@ -86,7 +115,7 @@ internal static class ArgumentOutOfRangeHelper
     {
         if (value.CompareTo(other) <= 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be less than {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be less than or equal {other}");
     }
 
     /// <summary>
