@@ -85,6 +85,57 @@ public static class DateTimeHelper
 
     #endregion
 
+    #region 属性
+
+    /// <summary>
+    /// 获取当前时间
+    /// </summary>
+    public static DateTimeOffset Now => DateTimeOffset.Now;
+
+    /// <summary>
+    /// 当前时间时间戳，单位为秒
+    /// </summary>
+    public static long NowUnixTimeSeconds => Now.ToUnixTimeSeconds();
+
+    /// <summary>
+    /// 当前时间时间戳，单位为毫秒
+    /// </summary>
+    public static long NowUnixTimeMilliseconds => Now.ToUnixTimeMilliseconds();
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 当前日期
+    /// </summary>
+    public static DateOnly NowDateOnly => Now.GetDateOnly();
+
+    /// <summary>
+    /// 当前时间
+    /// </summary>
+    public static TimeOnly NowTimeOnly => Now.GetTimeOnly();
+#endif
+
+    #endregion
+
+    /// <summary>
+    /// 将秒级时间戳转为本地时间
+    /// </summary>
+    /// <param name="seconds">秒级时间戳</param>
+    /// <returns>本地时间</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTimeOffset FromUnixTimeSeconds(long seconds) =>
+        DateTimeOffset.FromUnixTimeSeconds(seconds).ToLocalTime();
+
+    /// <summary>
+    /// 将毫秒级时间戳转为本地时间
+    /// </summary>
+    /// <param name="milliseconds">毫秒级时间戳</param>
+    /// <returns>本地时间</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTimeOffset FromUnixTimeMilliseconds(long milliseconds) =>
+        DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).ToLocalTime();
+
     /// <summary>
     /// 判断年份是否为闰年
     /// </summary>
@@ -218,6 +269,115 @@ public static class DateTimeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (int Year, int Month, int Day) SplitDateNumber(int date) =>
         (date / 10000, date / 100 % 100, date % 100);
+
+    #endregion
+
+    #region 同一天判断
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 判断两个日期是否为同一天
+    /// </summary>
+    /// <param name="date1">日期1</param>
+    /// <param name="date2">日期2</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameDay(DateOnly date1, DateOnly date2) =>
+        date1.DayNumber == date2.DayNumber;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameDay(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
+        IsSameDay(dt1, dt2, criticalValue.AsTimeSpan());
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
+        IsSameDay(offset1, offset2, criticalValue.AsTimeSpan());
+#endif
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameDay(DateTime dt1, DateTime dt2) =>
+        dt1.Year == dt2.Year && dt1.Month == dt2.Month && dt1.Day == dt2.Day;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    public static bool IsSameDay(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
+    {
+        if (dt1.TimeOfDay < criticalValue)
+        {
+            dt1 = dt1.AddDays(-1);
+        }
+
+        if (dt2.TimeOfDay < criticalValue)
+        {
+            dt2 = dt2.AddDays(-1);
+        }
+
+        return IsSameDay(dt1, dt2);
+    }
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2) =>
+        offset1.Year == offset2.Year && offset1.Month == offset2.Month && offset1.Day == offset2.Day;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一天
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一天</returns>
+    [Pure]
+    public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
+    {
+        if (offset1.TimeOfDay < criticalValue)
+        {
+            offset1 = offset1.AddDays(-1);
+        }
+
+        if (offset2.TimeOfDay < criticalValue)
+        {
+            offset2 = offset1.AddDays(-1);
+        }
+
+        return IsSameDay(offset1, offset2);
+    }
 
     #endregion
 }

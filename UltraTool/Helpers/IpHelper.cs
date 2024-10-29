@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 #if !NET6_0_OR_GREATER
 using UltraTool.Collections;
 #endif
+using UltraTool.Randoms;
 
 namespace UltraTool.Helpers;
 
@@ -15,6 +16,9 @@ namespace UltraTool.Helpers;
 [PublicAPI]
 public static class IpHelper
 {
+    /// <summary>默认最大尝试次数</summary>
+    private const int DefaultMaxAttemptTimes = 5;
+
     /// <summary>
     /// 判断是否为私有Ipv4地址
     /// </summary>
@@ -110,4 +114,44 @@ public static class IpHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsUsedUdpPort(int port) => IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()
         .Select(static point => point.Port).Contains(port);
+
+    /// <summary>
+    /// 随机获取未使用的端口，随机范围[3000, 65535)
+    /// </summary>
+    /// <param name="maxAttemptTimes">最大尝试次数，默认为<see cref="DefaultMaxAttemptTimes"/></param>
+    /// <returns>未使用的端口</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int RandomUnusedPort(int maxAttemptTimes = DefaultMaxAttemptTimes) =>
+        RandomUnusedPort(3000, ushort.MaxValue, maxAttemptTimes);
+
+    /// <summary>
+    /// 随机获取未使用的端口
+    /// </summary>
+    /// <param name="minValue">最小值</param>
+    /// <param name="maxValue">最大值</param>
+    /// <param name="maxAttemptTimes">最大尝试次数，默认为<see cref="DefaultMaxAttemptTimes"/></param>
+    /// <returns>未使用的端口</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int RandomUnusedPort(int minValue, int maxValue, int maxAttemptTimes = DefaultMaxAttemptTimes)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfNegative(minValue);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(maxValue, ushort.MaxValue);
+        if (minValue > maxValue)
+        {
+            throw new ArgumentException("minValue must less than maxValue");
+        }
+
+        var times = 0;
+        while (times < maxAttemptTimes)
+        {
+            var port = RandomHelper.Shared.Next(minValue, maxValue);
+            if (!IsUsedPort(port)) return port;
+
+            times++;
+        }
+
+        throw new TimeoutException("获取未使用的端口尝试次数过多");
+    }
 }
