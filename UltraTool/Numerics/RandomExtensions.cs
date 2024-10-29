@@ -2,7 +2,9 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using UltraTool.Helpers;
+#if !NET6_0_OR_GREATER
 using UltraTool.Randoms;
+#endif
 
 namespace UltraTool.Numerics;
 

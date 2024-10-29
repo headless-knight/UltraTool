@@ -6,11 +6,27 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
+    <Authors>HeadlessKnight</Authors>
+    <Title>UltraTool</Title>
+    <Description>一款致力于简单易用、减少重复代码的工具库，提供丰富的扩展方法、工具类、工具函数等，帮助开发者提高开发效率，让您的开发速度更快更流畅</Description>
+    <Copyright>Copyright (c) 2024 HeadlessKnight</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>tool;utility;numeric;random;collection</PackageTags>
+    <PackageProjectUrl>https://github.com/headless-knight/UltraTool</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/headless-knight/UltraTool</RepositoryUrl>
+    <PackageIcon>Logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="all"/>
     <PackageReference Include="System.Collections.Immutable" Version="8.0.0" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.1'))"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Logo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="..\README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
 </Project>

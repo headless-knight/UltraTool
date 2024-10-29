@@ -9,7 +9,7 @@ namespace UltraTool.Randoms;
 public static class RandomHelper
 {
 #if !NET6_0_OR_GREATER
-    private static Random? _shared;
+    [ThreadStatic] private static Random? _shared;
 #endif
 
     /// <summary>
