@@ -380,4 +380,230 @@ public static class DateTimeHelper
     }
 
     #endregion
+
+    #region 同一周判断
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 判断两个日期是否同一周
+    /// </summary>
+    /// <param name="date1">日期1</param>
+    /// <param name="date2">日期2</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameWeek(DateOnly date1, DateOnly date2) =>
+        IsSameDay(date1.AsDateTime(), date2.AsDateTime());
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameWeek(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
+        IsSameWeek(dt1, dt2, criticalValue.AsTimeSpan());
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
+        IsSameWeek(offset1, offset2, criticalValue.AsTimeSpan());
+#endif
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    public static bool IsSameWeek(DateTime dt1, DateTime dt2)
+    {
+        var calendar = CultureInfo.CurrentCulture.Calendar;
+        // 周一作为每周第一天计算
+        return calendar.GetWeekOfYear(dt1, CalendarWeekRule.FirstDay, DayOfWeek.Monday)
+               == calendar.GetWeekOfYear(dt2, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+    }
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    public static bool IsSameWeek(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
+    {
+        if (dt1.TodayOfWeek() == 1 && dt1.TimeOfDay < criticalValue)
+        {
+            dt1 = dt1.AddDays(-1);
+        }
+
+        if (dt2.TodayOfWeek() == 1 && dt2.TimeOfDay < criticalValue)
+        {
+            dt2 = dt2.AddDays(-1);
+        }
+
+        return IsSameWeek(dt1, dt2);
+    }
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2)
+    {
+        var calendar = CultureInfo.CurrentCulture.Calendar;
+        // 周一作为每周第一天计算
+        return calendar.GetWeekOfYear(offset1.DateTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)
+               == calendar.GetWeekOfYear(offset2.DateTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+    }
+
+    /// <summary>
+    /// 判断两个日期时间是否同一周
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否同一周</returns>
+    [Pure]
+    public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
+    {
+        if (offset1.TodayOfWeek() == 1 && offset1.TimeOfDay < criticalValue)
+        {
+            offset1 = offset1.AddDays(-1);
+        }
+
+        if (offset2.TodayOfWeek() == 1 && offset2.TimeOfDay < criticalValue)
+        {
+            offset2 = offset2.AddDays(-1);
+        }
+
+        return IsSameWeek(offset1, offset2);
+    }
+
+    #endregion
+
+    #region 同一月判断
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 判断两个日期是否为同一月
+    /// </summary>
+    /// <param name="date1">日期1</param>
+    /// <param name="date2">日期2</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameMonth(DateOnly date1, DateOnly date2) =>
+        date1.Year == date2.Year && date1.Month == date2.Month;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameMonth(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
+        IsSameMonth(dt1, dt2, criticalValue.AsTimeSpan());
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
+        IsSameMonth(offset1, offset2, criticalValue.AsTimeSpan());
+#endif
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameMonth(DateTime dt1, DateTime dt2) =>
+        dt1.Year == dt2.Year && dt1.Month == dt2.Month;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="dt1">日期时间1</param>
+    /// <param name="dt2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    public static bool IsSameMonth(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
+    {
+        if (dt1.Day == 1 && dt1.TimeOfDay < criticalValue)
+        {
+            dt1 = dt1.AddDays(-1);
+        }
+
+        if (dt2.Day == 1 && dt2.TimeOfDay < criticalValue)
+        {
+            dt2 = dt2.AddDays(-1);
+        }
+
+        return IsSameMonth(dt1, dt2);
+    }
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2) =>
+        offset1.Year == offset2.Year && offset1.Month == offset2.Month;
+
+    /// <summary>
+    /// 判断两个日期时间是否为同一月
+    /// </summary>
+    /// <param name="offset1">日期时间1</param>
+    /// <param name="offset2">日期时间2</param>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>是否为同一月</returns>
+    [Pure]
+    public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
+    {
+        if (offset1.Day == 1 && offset1.TimeOfDay < criticalValue)
+        {
+            offset1 = offset1.AddDays(-1);
+        }
+
+        if (offset2.Day == 1 && offset2.TimeOfDay < criticalValue)
+        {
+            offset2 = offset2.AddDays(-1);
+        }
+
+        return IsSameMonth(offset1, offset2);
+    }
+
+    #endregion
 }

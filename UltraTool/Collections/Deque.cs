@@ -39,6 +39,11 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
         }
     }
 
+    /// <summary>
+    /// 双端队列是否为空
+    /// </summary>
+    public bool IsEmpty => Count <= 0;
+
     /// <inheritdoc />
     bool ICollection<T>.IsReadOnly => false;
 
@@ -302,7 +307,7 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
     /// <param name="deque">双端队列</param>
     public struct Enumerator(Deque<T> deque) : IEnumerator<T>
     {
-        private int _version = deque._version;
+        private readonly int _version = deque._version;
         private int _index = -1;
 
         /// <inheritdoc />
@@ -325,7 +330,6 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
         /// <inheritdoc />
         public void Reset()
         {
-            _version = deque._version;
             _index = -1;
         }
 

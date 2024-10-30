@@ -29,7 +29,7 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
         get
         {
             var node = First;
-            while (node != null)
+            while (node is { Next: not null })
             {
                 node = node.Next;
             }
@@ -40,6 +40,14 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
 
     /// <inheritdoc cref="ICollection{T}.Count" />
     public int Count { get; private set; }
+
+    /// <summary>
+    /// 单链表是否为空
+    /// </summary>
+#if NET6_0_OR_GREATER
+    [MemberNotNullWhen(false, nameof(First), nameof(Last))]
+#endif
+    public bool IsEmpty => Count <= 0;
 
     /// <inheritdoc />
     bool ICollection<T>.IsReadOnly => false;

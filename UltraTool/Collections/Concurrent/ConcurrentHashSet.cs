@@ -19,7 +19,7 @@ public sealed class ConcurrentHashSet<T> : ISet<T>
     /// <inheritdoc />
     bool ICollection<T>.IsReadOnly => false;
 
-    /// <inheritdoc cref="ISet{T}.Count" />
+    /// <inheritdoc cref="ICollection{T}.Count" />
     public int Count
     {
         [Pure, CollectionAccess(CollectionAccessType.Read)]
@@ -361,7 +361,7 @@ public sealed class ConcurrentHashSet<T> : ISet<T>
         }
     }
 
-    /// <inheritdoc cref="ISet{T}.GetEnumerator" />
+    /// <inheritdoc cref="IEnumerable{T}.GetEnumerator" />
     /// <remarks>获取的枚举器范围为调用时元素的拷贝</remarks>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public List<T>.Enumerator GetEnumerator()

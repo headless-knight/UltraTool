@@ -412,7 +412,7 @@ public sealed class ConcurrentList<T> : IList<T>, IReadOnlyList<T>
         }
     }
 
-    /// <inheritdoc cref="IList{T}.GetEnumerator" />
+    /// <inheritdoc cref="IEnumerable{T}.GetEnumerator" />
     /// <remarks>获取的枚举器范围为调用时元素的拷贝</remarks>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public List<T>.Enumerator GetEnumerator()

@@ -141,7 +141,7 @@ public static class StreamExtensions
                     Position = sequence.Length - offset;
                     break;
                 }
-                default: throw new ArgumentOutOfRangeException(nameof(origin), origin, "不受支持的SeekOrigin");
+                default: throw new ArgumentOutOfRangeException(nameof(origin), origin, "Unsupported SeekOrigin");
             }
 
             return Position;

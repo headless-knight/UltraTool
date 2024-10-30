@@ -14,14 +14,14 @@ dotnet add package UltraTool
 
 此工具库目前仍在持续开发中，功能与文档正在持续补全更新中。
 
-### 目录
-
 * [池化数组](#池化数组)
 * [异常构建器](#异常构建器)
 * [集合](#集合)
+    * [非标准库类型](#非标准库类型)
     * [列表拓展](#列表拓展)
     * [字典拓展](#字典拓展)
 * [随机](#随机)
+* [任务](#任务)
 
 ### 池化数组
 
@@ -78,6 +78,54 @@ public void TestMethod(int x)
 ```
 
 ### 集合
+
+### 非标准库类型
+
+此库提供了部分标准库未提供的集合类型：
+
+1. ConcurrentHashSet
+
+线程安全的HashSet，内部使用HashSet实现，通过读写锁ReaderWriterLockSlim对HashSet进行读写保护。
+
+2. ConcurrentList
+
+线程安全的List，内部使用List实现，通过读写锁ReaderWriterLockSlim对HashSet进行读写保护。
+
+3. Deque
+
+Deque是一个双端队列，内部使用环形数组实现，支持在队列头和队列尾添加和删除元素。操作示例如下：
+
+```csharp
+var deque = new Deque<int>();
+// 在队列头添加元素
+deque.EnqueueFirst(1);
+// 在队列尾添加元素
+deque.EnqueueLast(2);
+// 获取队列头元素
+var first = deque.PeekFirst();
+// 获取队列尾元素
+var last = deque.PeekLast();
+// 移除队列头元素
+deque.DequeueFirst();
+// 移除队列尾元素
+deque.DequeueLast();
+```
+
+4. SingleLinkedList
+
+SingleLinkedList是一个单链表，支持在链表头、链表尾以及指定节点后添加和删除元素。操作示例如下：
+
+```csharp
+var list = new SingleLinkedList<int>();
+// 添加元素为头节点
+list.AddFirst(1);
+// 添加元素为尾节点
+list.AddLast(2);
+// 在指定节点后添加元素
+list.AddAfter(list.First, 3);
+// 移除指定节点后的节点
+list.RemoveAfter(list.First);
+```
 
 ### 列表拓展
 
@@ -268,4 +316,41 @@ var itemWeight = new Dictionary<int, int>() { { 1, 10 }, { 2, 5 }, { 3, 2 } };
 var items = random.NextWeightedSelection(itemWeight, 3);
 // 不放回抽取多个元素，每次只能抽取一个元素，此处为获取3个
 var items2 = random.NextWeightedSample(itemWeight, 3);
+```
+
+### 任务
+
+此库提供了部分对Task和ValueTask的拓展方法，以简化使用。
+
+1. 获取任务结果
+
+```csharp
+Task<int> task = Task.FromResult(1);
+var result = task.GetResult();
+
+ValueTask<int> valueTask = new ValueTask<int>(1);
+var result2 = valueTask.GetResult();
+```
+
+2. 忽略任务结果异常
+
+```csharp
+Task task = Task.FromException(new Exception());
+// 忽略任务的结果和异常
+task.IgnoreResult();
+// 只忽略异常，此方法仍然返回Task
+await task.IgnoreException();
+
+// 上述任务抛出异常时都会被忽略，避免线程崩溃。
+// 如果需要打印异常信息，可以订阅异常事件，TaskHelper.IgnoreExceptionCaught
+TaskHelper.IgnoreExceptionCaught += (exception) => Console.WriteLine(exception.Message);
+```
+
+3. 等待多个任务完成
+
+```csharp
+Task task1 = Task.FromResult(1);
+Task task2 = Task.FromResult(2);
+// 等待两个任务并获取结果
+var (result1, result2) = await TaskHelper.AwaitAll(task1, task2);
 ```
