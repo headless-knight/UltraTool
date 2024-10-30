@@ -8,7 +8,7 @@ namespace UltraTool.Randoms;
 /// <param name="item">元素</param>
 /// <param name="weight">权重</param>
 [PublicAPI]
-public sealed class WeightedItem<T>(T item, int weight) : IWeighted
+public class WeightedItem<T>(T item, int weight) : IWeighted
 {
     /// <summary>
     /// 元素
