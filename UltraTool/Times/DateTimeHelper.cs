@@ -88,17 +88,22 @@ public static class DateTimeHelper
     #region 属性
 
     /// <summary>
-    /// 获取当前时间
+    /// 当前日期时间
     /// </summary>
     public static DateTimeOffset Now => DateTimeOffset.Now;
 
     /// <summary>
-    /// 当前时间时间戳，单位为秒
+    /// 当前UTC日期时间
+    /// </summary>
+    public static DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// 当前时间戳，单位为秒
     /// </summary>
     public static long NowUnixTimeSeconds => Now.ToUnixTimeSeconds();
 
     /// <summary>
-    /// 当前时间时间戳，单位为毫秒
+    /// 当前时间戳，单位为毫秒
     /// </summary>
     public static long NowUnixTimeMilliseconds => Now.ToUnixTimeMilliseconds();
 
@@ -112,6 +117,16 @@ public static class DateTimeHelper
     /// 当前时间
     /// </summary>
     public static TimeOnly NowTimeOnly => Now.GetTimeOnly();
+
+    /// <summary>
+    /// 当前UTC日期
+    /// </summary>
+    public static DateOnly UtcNowDateOnly => UtcNow.GetDateOnly();
+
+    /// <summary>
+    /// 当前UTC时间
+    /// </summary>
+    public static TimeOnly UtcNowTimeOnly => UtcNow.GetTimeOnly();
 #endif
 
     #endregion

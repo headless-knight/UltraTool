@@ -1,4 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+#if NET7_0_OR_GREATER
+using System.Numerics;
+#endif
 using System.Runtime.CompilerServices;
 using System.Text;
 using JetBrains.Annotations;
@@ -209,6 +212,116 @@ public static class EnumerableExtensions
         found = default;
         return false;
     }
+
+    #region 合并字典
+
+#if NET7_0_OR_GREATER
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则将值相加保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器，入参(遍历值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, TValue> ToMergedDictionary<TKey, TValue>(
+        [InstantHandle] this IEnumerable<TValue> source, Func<TValue, TKey> keySelector) where TKey : notnull
+        where TValue : IAdditionOperators<TValue, TValue, TValue> =>
+        source.ToMergedDictionary(keySelector, static (_, value, addValue) => value + addValue);
+
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则将值相加保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器，入参(遍历值)</param>
+    /// <param name="valueSelector">值选择器，入参(遍历值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, TValue> ToMergedDictionary<TSource, TKey, TValue>(
+        [InstantHandle] this IEnumerable<TSource> source, Func<TSource, TKey> keySelector,
+        Func<TSource, TValue> valueSelector) where TKey : notnull
+        where TValue : IAdditionOperators<TValue, TValue, TValue> =>
+        source.ToMergedDictionary(keySelector, valueSelector, static (_, value, addValue) => value + addValue);
+#else
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则将值相加保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器，入参(遍历值)</param>
+    /// <param name="valueSelector">值选择器，入参(遍历值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, int> ToMergedDictionary<TSource, TKey>(
+        [InstantHandle] this IEnumerable<TSource> source, Func<TSource, TKey> keySelector,
+        Func<TSource, int> valueSelector) where TKey : notnull =>
+        source.ToMergedDictionary(keySelector, valueSelector, static (_, value, addValue) => value + addValue);
+
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则将值相加保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器，入参(遍历值)</param>
+    /// <param name="valueSelector">值选择器，入参(遍历值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, long> ToMergedDictionary<TSource, TKey>(
+        [InstantHandle] this IEnumerable<TSource> source, Func<TSource, TKey> keySelector,
+        Func<TSource, long> valueSelector) where TKey : notnull =>
+        source.ToMergedDictionary(keySelector, valueSelector, static (_, value, addValue) => value + addValue);
+#endif
+
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则通过合并器合并后保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器</param>
+    /// <param name="merger">合并器，入参(键,已添加值,待添加值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, TValue> ToMergedDictionary<TKey, TValue>(
+        [InstantHandle] this IEnumerable<TValue> source, Func<TValue, TKey> keySelector,
+        Func<TKey, TValue, TValue, TValue> merger) where TKey : notnull
+    {
+        var result = new Dictionary<TKey, TValue>(source.GetCountOrZero());
+        foreach (var value in source)
+        {
+            var key = keySelector.Invoke(value);
+            if (!result.TryGetValue(key, out var got))
+            {
+                result.Add(key, value);
+                continue;
+            }
+
+            result[key] = merger.Invoke(key, got, value);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 将序列转换为字典，构建字典过程中若存在重复的键，则通过合并器合并后保存
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="keySelector">键选择器，入参(遍历值)</param>
+    /// <param name="valueSelector">值选择器，入参(遍历值)</param>
+    /// <param name="merger">合并器，入参(键,已添加值,待添加值)</param>
+    /// <returns>字典</returns>
+    public static Dictionary<TKey, TValue> ToMergedDictionary<TSource, TKey, TValue>(
+        [InstantHandle] this IEnumerable<TSource> source, Func<TSource, TKey> keySelector,
+        Func<TSource, TValue> valueSelector, Func<TKey, TValue, TValue, TValue> merger) where TKey : notnull
+    {
+        var result = new Dictionary<TKey, TValue>(source.GetCountOrZero());
+        foreach (var item in source)
+        {
+            var key = keySelector.Invoke(item);
+            var value = valueSelector.Invoke(item);
+            if (!result.TryGetValue(key, out var got))
+            {
+                result.Add(key, value);
+                continue;
+            }
+
+            result[key] = merger.Invoke(key, got, value);
+        }
+
+        return result;
+    }
+
+    #endregion
 
     #region 嵌套字典
 

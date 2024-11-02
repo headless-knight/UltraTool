@@ -35,6 +35,106 @@ public static class PooledArray
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> Get<T>(int length, ArrayPool<T> pool, bool clearArray = false) =>
         new(length, pool, clearArray);
+
+    /// <summary>
+    /// 从指定跨度拷贝数据生成池化数组
+    /// </summary>
+    /// <param name="span">只读跨度</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PooledArray<T> From<T>(ReadOnlySpan<T> span, bool clearArray = false) =>
+        From(span.Length, span, ArrayPool<T>.Shared, clearArray);
+
+    /// <summary>
+    /// 从指定跨度拷贝数据生成池化数组
+    /// </summary>
+    /// <param name="span">只读跨度</param>
+    /// <param name="pool">数组池</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PooledArray<T> From<T>(ReadOnlySpan<T> span, ArrayPool<T> pool, bool clearArray = false) =>
+        From(span.Length, span, pool, clearArray);
+
+    /// <summary>
+    /// 从指定跨度拷贝数据生成池化数组
+    /// </summary>
+    /// <param name="length">初始长度</param>
+    /// <param name="span">只读跨度</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PooledArray<T> From<T>(int length, ReadOnlySpan<T> span, bool clearArray = false) =>
+        From(length, span, ArrayPool<T>.Shared, clearArray);
+
+    /// <summary>
+    /// 从指定跨度拷贝数据生成池化数组
+    /// </summary>
+    /// <param name="length">初始长度</param>
+    /// <param name="span">只读跨度</param>
+    /// <param name="pool">数组池</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    public static PooledArray<T> From<T>(int length, ReadOnlySpan<T> span, ArrayPool<T> pool, bool clearArray = false)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfLessThan(length, span.Length);
+        var destination = pool.Rent(length);
+        span.CopyTo(new Span<T>(destination, 0, span.Length));
+        return new PooledArray<T>(destination, length, pool, clearArray);
+    }
+
+    /// <summary>
+    /// 序列转为池化数组
+    /// </summary>
+    /// <param name="source">源序列</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PooledArray<T> ToPooledArray<T>([InstantHandle] this IEnumerable<T> source, bool clearArray = false)
+        => source.ToPooledArray(ArrayPool<T>.Shared, clearArray);
+
+    /// <summary>
+    /// 序列转为池化数组
+    /// </summary>
+    /// <param name="source">源序列</param>
+    /// <param name="pool">数组池</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    public static PooledArray<T> ToPooledArray<T>([InstantHandle] this IEnumerable<T> source, ArrayPool<T> pool,
+        bool clearArray = false)
+    {
+        var rented = pool.Rent(source.GetCountOrZero());
+        try
+        {
+            var i = 0;
+            foreach (var item in source)
+            {
+                // 超过已分配的长度，则扩容
+                if (i >= rented.Length)
+                {
+                    var newRented = ArrayPool<T>.Shared.Rent(Math.Max(rented.Length, 4) << 1);
+                    rented.CopyTo(newRented, 0);
+                    pool.Return(newRented);
+                }
+
+                rented[i++] = item;
+            }
+
+            return new PooledArray<T>(rented, i, pool, clearArray);
+        }
+        catch
+        {
+            pool.Return(rented);
+            throw;
+        }
+    }
 }
 
 /// <summary>

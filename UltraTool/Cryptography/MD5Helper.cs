@@ -2,8 +2,9 @@
 using System.Text;
 using JetBrains.Annotations;
 using UltraTool.Collections;
+using UltraTool.Helpers;
 
-namespace UltraTool.Helpers;
+namespace UltraTool.Cryptography;
 
 /// <summary>
 /// MD5帮助类
