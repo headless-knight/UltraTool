@@ -132,7 +132,7 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
     {
         if (node.List != this)
         {
-            throw new ArgumentException("节点不属于当前列表", nameof(node));
+            throw new ArgumentException("The node does not belong to the current list", nameof(node));
         }
 
         AddAfterInternal(node, item);
@@ -203,7 +203,9 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
     /// <returns>头节点元素</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T RemoveFirst() => TryRemoveFirst(out var item) ? item : throw new InvalidOperationException("链表为空");
+    public T RemoveFirst() => TryRemoveFirst(out var item)
+        ? item
+        : throw new InvalidOperationException("The linked list is empty");
 
     /// <summary>
     /// 尝试删除头节点
@@ -235,7 +237,7 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
     {
         if (node.List != this)
         {
-            throw new ArgumentException("节点不属于当前列表", nameof(node));
+            throw new ArgumentException("The node does not belong to the current list", nameof(node));
         }
 
         // 节点为尾节点
@@ -325,7 +327,7 @@ public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
         {
             if (_version != _beforeFirst.Next?.List?._version)
             {
-                throw new InvalidOperationException("链表结构已改变");
+                throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
             }
 
             if (_current?.Next == null) return false;

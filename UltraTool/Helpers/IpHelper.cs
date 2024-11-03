@@ -152,6 +152,6 @@ public static class IpHelper
             times++;
         }
 
-        throw new TimeoutException("获取未使用的端口尝试次数过多");
+        throw new TimeoutException("Too many attempts to get an unused port");
     }
 }

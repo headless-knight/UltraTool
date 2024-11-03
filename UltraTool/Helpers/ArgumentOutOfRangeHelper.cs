@@ -15,7 +15,7 @@ internal static class ArgumentOutOfRangeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(int value,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
 
@@ -27,7 +27,7 @@ internal static class ArgumentOutOfRangeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(long value,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
 
@@ -39,7 +39,7 @@ internal static class ArgumentOutOfRangeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(float value,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
 
@@ -51,7 +51,7 @@ internal static class ArgumentOutOfRangeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(double value,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
 
@@ -63,7 +63,7 @@ internal static class ArgumentOutOfRangeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegativeOrZero(int value,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) => ThrowIfLessThanOrEqual(value, 0, paramName);
 
@@ -75,7 +75,7 @@ internal static class ArgumentOutOfRangeHelper
     /// <param name="paramName">参数名</param>
     public static void ThrowIfLessThan<T>(T value, T other,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : IComparable<T>
     {
@@ -92,7 +92,7 @@ internal static class ArgumentOutOfRangeHelper
     /// <param name="paramName">参数名</param>
     public static void ThrowIfLessThanOrEqual<T>(T value, T other,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : IComparable<T>
     {
@@ -109,7 +109,7 @@ internal static class ArgumentOutOfRangeHelper
     /// <param name="paramName">参数名</param>
     public static void ThrowIfGreaterThan<T>(T value, T other,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : IComparable<T>
     {
@@ -126,7 +126,7 @@ internal static class ArgumentOutOfRangeHelper
     /// <param name="paramName">参数名</param>
     public static void ThrowIfGreaterThanOrEqual<T>(T value, T other,
 #if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression("value")]
+        [CallerArgumentExpression(nameof(value))]
 #endif
         string? paramName = null) where T : IComparable<T>
     {

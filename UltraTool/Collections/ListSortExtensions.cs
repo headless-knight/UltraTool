@@ -161,7 +161,7 @@ public static class ListSortExtensions
     private static int QuickSortPartition<T>(IList<T> list, int left, int right, IComparer<T> comparer)
     {
         // 三值取中，获取基准值
-        var pivot = CompareHelper.Middle(list[left], list[right], list[(left + right) >> 1], comparer);
+        var pivot = MathHelper.Middle(list[left], list[right], list[(left + right) >> 1], comparer);
         while (true)
         {
             // 从左向右搜索，直到找到第一个大于等于基准值的元素

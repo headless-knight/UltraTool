@@ -9,7 +9,7 @@ namespace UltraTool.Collections.Concurrent;
 /// 线程安全列表，基于列表与读写锁
 /// </summary>
 [PublicAPI]
-public sealed class ConcurrentList<T> : IList<T>, IReadOnlyList<T>
+public class ConcurrentList<T> : IList<T>, IReadOnlyList<T>
 {
     private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
     private readonly List<T> _list;

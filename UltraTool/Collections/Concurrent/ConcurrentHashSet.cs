@@ -8,9 +8,11 @@ namespace UltraTool.Collections.Concurrent;
 /// 线程安全哈希集合，基于哈希集合与读写锁
 /// </summary>
 [PublicAPI]
-public sealed class ConcurrentHashSet<T> : ISet<T>
+public class ConcurrentHashSet<T> : ISet<T>
 #if NET5_0_OR_GREATER
     , IReadOnlySet<T>
+#else
+    , IReadOnlyCollection<T>
 #endif
 {
     private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
