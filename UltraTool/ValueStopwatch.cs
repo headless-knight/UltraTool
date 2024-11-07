@@ -37,8 +37,7 @@ public struct ValueStopwatch
             long delta;
             if (IsRunning)
             {
-                var end = Stopwatch.GetTimestamp();
-                delta = end - timestamp;
+                delta = GetTimestamp() - timestamp;
             }
             else
             {
