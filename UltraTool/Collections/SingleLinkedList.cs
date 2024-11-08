@@ -10,7 +10,7 @@ namespace UltraTool.Collections;
 /// 单链表
 /// </summary>
 [PublicAPI]
-public sealed class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
+public class SingleLinkedList<T> : ICollection<T>, IReadOnlyCollection<T>
 {
     private int _version;
 

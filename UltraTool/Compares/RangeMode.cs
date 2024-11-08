@@ -1,4 +1,4 @@
-namespace Ultra.Common.Compares;
+namespace UltraTool.Compares;
 
 /// <summary>
 /// 区间模式

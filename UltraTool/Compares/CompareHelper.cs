@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
-using Ultra.Common.Compares;
 using UltraTool.Helpers;
 
 namespace UltraTool.Compares;
