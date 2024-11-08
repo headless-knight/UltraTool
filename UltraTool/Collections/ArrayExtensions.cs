@@ -54,7 +54,7 @@ public static class ArrayExtensions
     /// <param name="array">数组</param>
     /// <param name="start">起始索引</param>
     /// <param name="length">长度</param>
-    /// <returns></returns>
+    /// <returns>只读内存</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlyMemory<T> AsReadOnlyMemory<T>(this T[] array, int start, int length)

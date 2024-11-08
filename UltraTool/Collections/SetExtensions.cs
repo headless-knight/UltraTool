@@ -1,8 +1,8 @@
-#if NET5_0_OR_GREATER
 using System.Collections;
+#if NET5_0_OR_GREATER
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 #endif
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
 namespace UltraTool.Collections;
@@ -49,7 +49,6 @@ public static class SetExtensions
         return count;
     }
 
-#if NET5_0_OR_GREATER
     /// <summary>
     /// 将集合转化为只读集合
     /// </summary>
@@ -57,46 +56,63 @@ public static class SetExtensions
     /// <returns>只读集合</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlySet<T> AsReadOnly<T>(this ISet<T> set) =>
-        set as IReadOnlySet<T> ?? new ReadOnlySetBridge<T>(set);
+    public static
+#if NET5_0_OR_GREATER
+        IReadOnlySet<T>
+#else
+        IReadOnlyCollection<T>
+#endif
+        AsReadOnly<T>(this ISet<T> set) =>
+        set as
+#if NET5_0_OR_GREATER
+            IReadOnlySet<T>
+#else
+            IReadOnlyCollection<T>
+#endif
+        ?? new ReadOnlySetBridge<T>(set);
 
     /// <summary>只读集合桥接</summary>
-    private sealed class ReadOnlySetBridge<T>(ISet<T> set) : IReadOnlySet<T>
+    private sealed class ReadOnlySetBridge<T>(ISet<T> set)
+#if NET5_0_OR_GREATER
+        : IReadOnlySet<T>
+#else
+        : IReadOnlyCollection<T>
+#endif
     {
         /// <inheritdoc />
         public int Count => set.Count;
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ICollection{T}.Contains" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(T item) => set.Contains(item);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.IsProperSubsetOf" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsProperSubsetOf(IEnumerable<T> other) => set.IsProperSubsetOf(other);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.IsProperSupersetOf" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsProperSupersetOf(IEnumerable<T> other) => set.IsProperSupersetOf(other);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.IsSubsetOf" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSubsetOf(IEnumerable<T> other) => set.IsSubsetOf(other);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.IsSupersetOf" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSupersetOf(IEnumerable<T> other) => set.IsSupersetOf(other);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.Overlaps" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Overlaps(IEnumerable<T> other) => set.Overlaps(other);
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISet{T}.SetEquals" />
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool SetEquals(IEnumerable<T> other) => set.SetEquals(other);
@@ -111,5 +127,4 @@ public static class SetExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
-#endif
 }

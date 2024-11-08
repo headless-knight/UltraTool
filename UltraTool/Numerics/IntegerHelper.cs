@@ -1,5 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using UltraTool.Helpers;
 
 namespace UltraTool.Numerics;
 
@@ -303,6 +305,30 @@ public static class IntegerHelper
     public static (uint Upper, uint Lower) SplitToUInt(ulong number) =>
         ((uint)(number >> 32), (uint)(number & 0xFFFFFFFF));
 
+    /// <summary>
+    /// 将整数指定索引位设置为1
+    /// </summary>
+    /// <param name="number">整数</param>
+    /// <param name="index">位索引</param>
+    public static void SetBitOne(ref int number, int index)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, 32);
+        number |= 1 << index;
+    }
+
+    /// <summary>
+    /// 将整数指定索引位设置为0
+    /// </summary>
+    /// <param name="number">整数</param>
+    /// <param name="index">位索引</param>
+    public static void SetBitZero(ref int number, int index)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, 32);
+        number &= ~(1 << index);
+    }
+
 #if NET7_0_OR_GREATER
     /// <summary>
     /// 将128位整型按高低位解析为两个长整型
@@ -343,5 +369,31 @@ public static class IntegerHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (ulong Upper, ulong Lower) SplitToULong(UInt128 number) =>
         ((ulong)(number >> 64), (ulong)(number & 0xFFFFFFFFFFFFFFFF));
+
+    /// <summary>
+    /// 将整数指定索引位设置为1
+    /// </summary>
+    /// <param name="number">整数</param>
+    /// <param name="index">位索引</param>
+    public static void SetBitOne<T>(ref T number, int index) where T : IBinaryInteger<T>
+    {
+        var count = number.GetBitCount();
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, count);
+        number |= T.One << index;
+    }
+
+    /// <summary>
+    /// 将整数指定索引位设置为0
+    /// </summary>
+    /// <param name="number">整数</param>
+    /// <param name="index">位索引</param>
+    public static void SetBitZero<T>(ref T number, int index) where T : IBinaryInteger<T>
+    {
+        var count = number.GetBitCount();
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, count);
+        number &= ~(T.One << index);
+    }
 #endif
 }
