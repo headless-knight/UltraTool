@@ -12,6 +12,8 @@ namespace UltraTool.Helpers;
 [PublicAPI]
 public static class ConvertHelper
 {
+    #region 十六进制
+
     /// <summary>小写十六进制字母表</summary>
     private const string LowerHexAlphabet = "0123456789abcdef";
 
@@ -172,4 +174,114 @@ public static class ConvertHelper
 
         return source.Length >> 1;
     }
+
+    #endregion
+
+    #region 六十二进制
+
+    /// <summary>Base62源基数</summary>
+    private const int Base62SourceBase = 256;
+
+    /// <summary>Base62目标基数</summary>
+    private const int Base62TargetBase = 62;
+
+    /// <summary>GMP风格62进制字母表</summary>
+    private const string GmpBase62Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    /// <summary>字母倒置的GMP风格62进制字母表</summary>
+    private const string InvertedBase62Alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    /// <summary>
+    /// 将字节数据转换为六十二进制字符数组
+    /// </summary>
+    /// <param name="source">源字节数据</param>
+    /// <param name="inverted">是否为倒置GMP风格，默认为false</param>
+    /// <returns>六十二进制字符数组</returns>
+    public static char[] ToBase62Chars(ReadOnlySpan<byte> source, bool inverted = false)
+    {
+        if (source is not { Length: > 0 }) return [];
+
+        var builder = ToBase62CharsInternal(source, inverted);
+        try
+        {
+            var chars = ArrayHelper.AllocateUninitializedArray<char>(builder.Count);
+            Array.Copy(builder.RawArray, chars, builder.Count);
+            return chars;
+        }
+        finally
+        {
+            builder.Return();
+        }
+    }
+
+    /// <summary>
+    /// 将字节数据转换为六十二进制字符串
+    /// </summary>
+    /// <param name="source">源字节数据</param>
+    /// <param name="inverted">是否为倒置GMP风格，默认为false</param>
+    /// <returns>六十二进制字符串</returns>
+    public static string ToBase62String(ReadOnlySpan<byte> source, bool inverted = false)
+    {
+        if (source is not { Length: > 0 }) return string.Empty;
+
+        var builder = ToBase62CharsInternal(source, inverted);
+        try
+        {
+            return new string(builder.RawArray, 0, builder.Count);
+        }
+        finally
+        {
+            builder.Return();
+        }
+    }
+
+    /// <summary>将字节数据转换为六十二进制字符数组，内部实现</summary>
+    private static PooledArrayBuilder<char> ToBase62CharsInternal(ReadOnlySpan<byte> source, bool inverted)
+    {
+        var alphabet = inverted ? InvertedBase62Alphabet : GmpBase62Alphabet;
+        var estimatedLength = EstimateOutputLength(source.Length, Base62SourceBase, Base62TargetBase);
+        var output = new PooledArrayBuilder<char>(estimatedLength, true);
+        var items = new PooledArrayBuilder<byte>(source.Length, true);
+        try
+        {
+            source.CopyTo(items.RawArray);
+            while (items is { Count: > 0 })
+            {
+                var quotient = new PooledArrayBuilder<byte>(items.Count, true);
+                var remainder = 0;
+                foreach (var item in items.ReadOnlySpan)
+                {
+                    var accumulator = (item & 0xFF) + remainder * Base62SourceBase;
+                    var digit = (accumulator - (accumulator % Base62TargetBase)) / Base62TargetBase;
+                    remainder = accumulator % Base62TargetBase;
+                    if (quotient.Count > 0 || digit > 0)
+                    {
+                        quotient.Add((byte)digit);
+                    }
+                }
+
+                output.Add(alphabet[remainder]);
+                items.Return();
+                items = quotient;
+            }
+        }
+        finally
+        {
+            items.Return();
+        }
+
+        for (var i = 0; i < source.Length - 1 && source[i] == 0; i++)
+        {
+            output.Add(alphabet[0]);
+        }
+
+        Array.Reverse(output.RawArray, 0, output.Count);
+        return output;
+    }
+
+    #endregion
+
+    /// <summary>估算转换后输出长度</summary>
+    private static int EstimateOutputLength(int inputLength, int sourceBase, int targetBase) =>
+        (int)Math.Ceiling((Math.Log(sourceBase) / Math.Log(targetBase)) * inputLength);
 }

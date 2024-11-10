@@ -33,4 +33,15 @@ public class ConvertTest(ITestOutputHelper output)
         bytes = ConvertHelper.FromHexString(lowerHex);
         Assert.True(array.SequenceEqual(bytes));
     }
+
+    [Fact]
+    public void ToBase62Test()
+    {
+        var num = Random.Shared.NextInt64();
+        output.WriteLine(num.ToString());
+        var array = BitConverter.GetBytes(num);
+        RandomNumberGenerator.Fill(array);
+        var base62 = ConvertHelper.ToBase62String(array);
+        output.WriteLine(base62);
+    }
 }
