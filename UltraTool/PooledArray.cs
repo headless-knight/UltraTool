@@ -234,7 +234,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="clearArray">是否释放时清空数组</param>
     public PooledArray(int length, ArrayPool<T> pool, bool clearArray)
     {
-        _array = RentArray(pool, length);
+        _array = pool.Rent(length);
         Length = length;
         _pool = pool;
         _clearArray = clearArray;
@@ -265,6 +265,90 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int IndexOf(T item) => Array.IndexOf(RawArray, item, 0, Length);
 
+    /// <summary>
+    /// 朝朝指定元素的索引，若不存在返回-1
+    /// </summary>
+    /// <param name="item">元素</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int IndexOf(T item, int startIndex) => IndexOf(item, startIndex, Length - startIndex);
+
+    /// <summary>
+    /// 查找指定元素的索引，若不存在返回-1
+    /// </summary>
+    /// <param name="item">元素</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int IndexOf(T item, int startIndex, int count)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
+        return Array.IndexOf(RawArray, item, startIndex, count);
+    }
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int FindIndex(Predicate<T> match) => Array.FindIndex(RawArray, 0, Length, match);
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int FindIndex(int startIndex, Predicate<T> match) =>
+        FindIndex(startIndex, Length - startIndex, match);
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int FindIndex(int startIndex, int count, Predicate<T> match)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
+        return Array.FindIndex(RawArray, startIndex, count, match);
+    }
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int BinarySearch(T value, IComparer<T>? comparer = null) =>
+        Array.BinarySearch(RawArray, 0, Length, value, comparer);
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">查找长度</param>
+    /// <param name="value">值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>查找结果索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int BinarySearch(int index, int length, T value, IComparer<T>? comparer = null)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
+        return Array.BinarySearch(RawArray, index, length, value, comparer);
+    }
+
     /// <inheritdoc />
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -277,7 +361,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <returns>跨度</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Span<T> Slice(int start) => Slice(start, Length);
+    public readonly Span<T> Slice(int start) => Slice(start, Length - start);
 
     /// <summary>
     /// 获取数组切片跨度
@@ -301,30 +385,15 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly void Reverse() => Array.Reverse(RawArray, 0, Length);
 
     /// <summary>
-    /// 二分查找
-    /// </summary>
-    /// <param name="value">值</param>
-    /// <param name="comparer">比较器，默认为null</param>
-    /// <returns>查找结果索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int BinarySearch(T value, IComparer<T>? comparer = null) =>
-        Array.BinarySearch(RawArray, 0, Length, value, comparer);
-
-    /// <summary>
-    /// 二分查找
+    /// 反转内容
     /// </summary>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
-    /// <param name="value">值</param>
-    /// <param name="comparer">比较器，默认为null</param>
-    /// <returns>查找结果索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int BinarySearch(int index, int length, T value, IComparer<T>? comparer = null)
+    /// <param name="length">反转长度</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public readonly void Reverse(int index, int length)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
-        return Array.BinarySearch(RawArray, index, length, value, comparer);
+        Array.Reverse(RawArray, index, length);
     }
 
     /// <summary>
@@ -363,17 +432,30 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <summary>
-    /// 拷贝数据至指定数组
+    /// 拷贝数据到指定数组
     /// </summary>
-    /// <param name="array">数组</param>
+    /// <param name="array">目标数组</param>
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly void CopyTo(T[] array) => CopyTo(array, 0);
+    public readonly void CopyTo(T[] array) => Array.Copy(RawArray, 0, array, 0, Length);
 
     /// <inheritdoc />
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void CopyTo(T[] array, int arrayIndex) => Array.Copy(RawArray, 0, array, arrayIndex, Length);
+
+    /// <summary>
+    /// 拷贝数据到指定数组
+    /// </summary>
+    /// <param name="array">目标数组</param>
+    /// <param name="arrayIndex">目标起始索引</param>
+    /// <param name="length">目标长度</param>
+    [CollectionAccess(CollectionAccessType.Read)]
+    public readonly void CopyTo(T[] array, int arrayIndex, int length)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(arrayIndex + length, Length);
+        Array.Copy(RawArray, 0, array, arrayIndex, length);
+    }
 
     /// <summary>
     /// 从池化数组拷贝到数组
@@ -419,24 +501,13 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        var pool = _pool;
-        var toReturn = _array;
-        var clearArray = _clearArray;
-        // 清空对象
-        this = default;
-        if (toReturn != null)
+        if (_array != null)
         {
-            ReturnArray(pool, toReturn, clearArray);
+            _pool.Return(_array, _clearArray);
         }
+
+        this = default;
     }
-
-    /// <summary>归还数组</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ReturnArray(ArrayPool<T> pool, T[] array, bool clearArray) => pool.Return(array, clearArray);
-
-    /// <summary>分配数组</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T[] RentArray(ArrayPool<T> pool, int capacity) => pool.Rent(capacity);
 
     #region 不受支持的方法
 

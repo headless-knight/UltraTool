@@ -8,6 +8,23 @@ namespace UltraTool.Helpers;
 internal static class ArgumentOutOfRangeHelper
 {
     /// <summary>
+    /// 如果值等于0则抛出异常
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="paramName">参数名</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ThrowIfZero(int value,
+#if NETCOREAPP3_0_OR_GREATER
+        [CallerArgumentExpression(nameof(value))]
+#endif
+        string? paramName = null)
+    {
+        if (value == 0) return;
+
+        throw new ArgumentOutOfRangeException(paramName, value, "The value must be not equal 0");
+    }
+
+    /// <summary>
     /// 如果值小于0则抛出异常
     /// </summary>
     /// <param name="value">值</param>
@@ -81,7 +98,7 @@ internal static class ArgumentOutOfRangeHelper
     {
         if (value.CompareTo(other) >= 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be greater than or equal {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be greater than or equal {other}");
     }
 
     /// <summary>
@@ -98,7 +115,7 @@ internal static class ArgumentOutOfRangeHelper
     {
         if (value.CompareTo(other) >= 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be greater than {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be greater than {other}");
     }
 
     /// <summary>
@@ -115,7 +132,7 @@ internal static class ArgumentOutOfRangeHelper
     {
         if (value.CompareTo(other) <= 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be less than or equal {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be less than or equal {other}");
     }
 
     /// <summary>
@@ -132,6 +149,6 @@ internal static class ArgumentOutOfRangeHelper
     {
         if (value.CompareTo(other) < 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"{value} must be less than {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be less than {other}");
     }
 }
