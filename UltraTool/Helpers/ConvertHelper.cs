@@ -201,17 +201,10 @@ public static class ConvertHelper
     {
         if (source is not { Length: > 0 }) return [];
 
-        var builder = ToBase62CharsInternal(source, inverted);
-        try
-        {
-            var chars = ArrayHelper.AllocateUninitializedArray<char>(builder.Count);
-            Array.Copy(builder.RawArray, chars, builder.Count);
-            return chars;
-        }
-        finally
-        {
-            builder.Return();
-        }
+        using var dynamicArray = ToBase62CharsInternal(source, inverted);
+        var chars = ArrayHelper.AllocateUninitializedArray<char>(dynamicArray.Length);
+        Array.Copy(dynamicArray.GetRawArray(), chars, dynamicArray.Length);
+        return chars;
     }
 
     /// <summary>
@@ -224,50 +217,44 @@ public static class ConvertHelper
     {
         if (source is not { Length: > 0 }) return string.Empty;
 
-        var builder = ToBase62CharsInternal(source, inverted);
-        try
-        {
-            return new string(builder.RawArray, 0, builder.Count);
-        }
-        finally
-        {
-            builder.Return();
-        }
+        using var dynamicArray = ToBase62CharsInternal(source, inverted);
+        return new string(dynamicArray.GetRawArray(), 0, dynamicArray.Length);
     }
 
     /// <summary>将字节数据转换为六十二进制字符数组，内部实现</summary>
-    private static PooledArrayBuilder<char> ToBase62CharsInternal(ReadOnlySpan<byte> source, bool inverted)
+    [MustDisposeResource]
+    private static PooledDynamicArray<char> ToBase62CharsInternal(ReadOnlySpan<byte> source, bool inverted)
     {
         var alphabet = inverted ? InvertedBase62Alphabet : GmpBase62Alphabet;
         var estimatedLength = EstimateOutputLength(source.Length, Base62SourceBase, Base62TargetBase);
-        var output = new PooledArrayBuilder<char>(estimatedLength, true);
-        var items = new PooledArrayBuilder<byte>(source.Length, true);
+        var output = new PooledDynamicArray<char>(estimatedLength, true);
+        var items = new PooledDynamicArray<byte>(source.Length, true);
         try
         {
-            source.CopyTo(items.RawArray);
-            while (items is { Count: > 0 })
+            source.CopyTo(items.GetRawArray());
+            while (items is { Length: > 0 })
             {
-                var quotient = new PooledArrayBuilder<byte>(items.Count, true);
+                var quotient = new PooledDynamicArray<byte>(items.Length, true);
                 var remainder = 0;
-                foreach (var item in items.ReadOnlySpan)
+                foreach (var item in items)
                 {
                     var accumulator = (item & 0xFF) + remainder * Base62SourceBase;
                     var digit = (accumulator - (accumulator % Base62TargetBase)) / Base62TargetBase;
                     remainder = accumulator % Base62TargetBase;
-                    if (quotient.Count > 0 || digit > 0)
+                    if (quotient.Length > 0 || digit > 0)
                     {
                         quotient.Add((byte)digit);
                     }
                 }
 
                 output.Add(alphabet[remainder]);
-                items.Return();
+                items.Dispose();
                 items = quotient;
             }
         }
         finally
         {
-            items.Return();
+            items.Dispose();
         }
 
         for (var i = 0; i < source.Length - 1 && source[i] == 0; i++)
@@ -275,7 +262,7 @@ public static class ConvertHelper
             output.Add(alphabet[0]);
         }
 
-        Array.Reverse(output.RawArray, 0, output.Count);
+        Array.Reverse(output.GetRawArray(), 0, output.Length);
         return output;
     }
 

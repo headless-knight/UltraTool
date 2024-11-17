@@ -110,19 +110,15 @@ public static class PooledArray
     public static PooledArray<T> ToPooledArray<T>([InstantHandle] this IEnumerable<T> source, ArrayPool<T> pool,
         bool clearArray = false)
     {
-        var builder = new PooledArrayBuilder<T>(source.GetCountOrZero(), pool, clearArray);
+        var dynamicArray = new PooledDynamicArray<T>(source.GetCountOrZero(), pool, clearArray);
         try
         {
-            foreach (var item in source)
-            {
-                builder.Add(item);
-            }
-
-            return builder.Build();
+            dynamicArray.AddRange(source);
+            return dynamicArray.BuildPooledArray();
         }
         catch
         {
-            builder.Return();
+            dynamicArray.Dispose();
             throw;
         }
     }
@@ -150,7 +146,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <summary>
-    /// 有效长度
+    /// 长度
     /// </summary>
     public int Length { get; }
 
@@ -202,14 +198,12 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly T this[int index]
     {
         [Pure, CollectionAccess(CollectionAccessType.Read)]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
             return _array![index];
         }
         [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set
         {
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
@@ -524,92 +518,4 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     void IList<T>.RemoveAt(int index) => throw new NotImplementedException();
 
     #endregion
-}
-
-/// <summary>
-/// 池化数组构建器
-/// </summary>
-internal struct PooledArrayBuilder<T>
-{
-    private readonly ArrayPool<T> _pool;
-    private readonly bool _clearArray;
-
-    /// <summary>
-    /// 元素数量
-    /// </summary>
-    public int Count { get; private set; }
-
-    /// <summary>
-    /// 原始数组
-    /// </summary>
-    public T[] RawArray { get; private set; }
-
-    /// <summary>
-    /// 只读跨度
-    /// </summary>
-    public ReadOnlySpan<T> ReadOnlySpan => RawArray.AsReadOnlySpan(0, Count);
-
-    /// <summary>
-    /// 构造方法
-    /// </summary>
-    /// <param name="capacity">初始容量</param>
-    /// <param name="clearArray">是否归还时清空数组</param>
-    public PooledArrayBuilder(int capacity, bool clearArray) : this(capacity, ArrayPool<T>.Shared, clearArray)
-    {
-    }
-
-    /// <summary>
-    /// 构造方法
-    /// </summary>
-    /// <param name="capacity">初始容量</param>
-    /// <param name="pool">数组池</param>
-    /// <param name="clearArray">是否归还时清空数组</param>
-    public PooledArrayBuilder(int capacity, ArrayPool<T> pool, bool clearArray)
-    {
-        _pool = pool;
-        _clearArray = clearArray;
-        RawArray = RentArray(capacity);
-    }
-
-    /// <summary>
-    /// 添加元素
-    /// </summary>
-    /// <param name="item">元素</param>
-    public void Add(T item)
-    {
-        if (Count >= RawArray.Length)
-        {
-            var capacity = Math.Max(RawArray.Length, 4) << 1;
-            var newArray = RentArray(capacity);
-            // 拷贝数据
-            Array.Copy(RawArray, 0, newArray, 0, RawArray.Length);
-            // 归还旧数组
-            Return();
-            RawArray = newArray;
-        }
-
-        RawArray[Count++] = item;
-    }
-
-    /// <summary>
-    /// 归还数组
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly void Return() => ReturnArray(RawArray);
-
-    /// <summary>
-    /// 构建池化数组
-    /// </summary>
-    /// <returns>池化数组</returns>
-    [MustDisposeResource]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly PooledArray<T> Build() => new(RawArray, Count, _pool, _clearArray);
-
-    /// <summary>归还数组</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly void ReturnArray(T[] array) => _pool.Return(array, _clearArray);
-
-    /// <summary>分配数组</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly T[] RentArray(int capacity) => _pool.Rent(capacity);
 }
