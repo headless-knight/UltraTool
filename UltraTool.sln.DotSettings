@@ -13,4 +13,5 @@
     <s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=7A8B4013FB60DB439E7ACE7FFE1916A6/Shortcut/@EntryValue">summary</s:String>
     <s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=7A8B4013FB60DB439E7ACE7FFE1916A6/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
     <s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=7A8B4013FB60DB439E7ACE7FFE1916A6/Text/@EntryValue">/// &lt;summary&gt;$SELECTION$$END$&lt;/summary&gt;</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=heapify/@EntryIndexedValue">True</s:Boolean>
 </wpf:ResourceDictionary>

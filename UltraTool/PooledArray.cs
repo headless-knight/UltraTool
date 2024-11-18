@@ -472,7 +472,17 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     {
         var sb = new StringBuilder();
         sb.Append("{ ");
-        sb.AppendJoin(", ", this);
+        foreach (var item in this)
+        {
+            sb.Append(item);
+            sb.Append(", ");
+        }
+
+        if (Length > 0)
+        {
+            sb.Length -= 2;
+        }
+
         sb.Append(" }");
         return sb.ToString();
     }
