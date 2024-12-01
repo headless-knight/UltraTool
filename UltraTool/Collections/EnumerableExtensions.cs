@@ -95,17 +95,19 @@ public static class EnumerableExtensions
         }
     }
 
+#if !NET9_0_OR_GREATER
     /// <summary>
     /// 返回一个带索引的序列
     /// </summary>
     /// <param name="source">序列</param>
     /// <returns>(元素,索引)序列</returns>
     [Pure, LinqTunnel]
-    public static IEnumerable<(int, T)> WithIndex<T>(this IEnumerable<T> source)
+    public static IEnumerable<(int Index, T Item)> Index<T>(this IEnumerable<T> source)
     {
         var index = 0;
         foreach (var item in source) yield return (index++, item);
     }
+#endif
 
     #endregion
 
@@ -115,7 +117,7 @@ public static class EnumerableExtensions
     /// <param name="source">源序列</param>
     /// <param name="separator">分隔元素</param>
     /// <returns>操作后序列</returns>
-    [LinqTunnel]
+    [Pure, LinqTunnel]
     public static IEnumerable<T> Join<T>(this IEnumerable<T> source, T separator)
     {
         using var enumerator = source.GetEnumerator();
@@ -386,7 +388,7 @@ public static class EnumerableExtensions
     [Pure]
     public static string DumpAsString<T>([InstantHandle] this IEnumerable<T> source)
     {
-        var sb = new StringBuilder();
+        var sb = new StringBuilder(source.GetCountOrZero() + 4);
         sb.Append("{ ");
         sb.AppendJoin(", ", source);
         sb.Append(" }");
@@ -401,7 +403,7 @@ public static class EnumerableExtensions
     [Pure]
     public static string DumpAsString<TKey, TValue>([InstantHandle] this IEnumerable<KeyValuePair<TKey, TValue>> pairs)
     {
-        var sb = new StringBuilder();
+        var sb = new StringBuilder(pairs.GetCountOrZero() + 4);
         sb.Append("{ ");
         var count = 0;
         foreach (var pair in pairs)

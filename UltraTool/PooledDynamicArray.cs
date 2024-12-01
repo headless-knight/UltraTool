@@ -317,6 +317,5 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <remarks>内部数组所有权应归于池化数组</remarks>
     /// <returns>池化数组</returns>
-    [MustDisposeResource, HandlesResourceDisposal]
     internal PooledArray<T> BuildPooledArray() => new(_array!, Length, _pool, _clearArray);
 }

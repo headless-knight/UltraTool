@@ -59,4 +59,13 @@ public static class ArrayExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlyMemory<T> AsReadOnlyMemory<T>(this T[] array, int start, int length)
         => new(array, start, length);
+
+    /// <summary>
+    /// 将数组内容输出为字符串
+    /// </summary>
+    /// <param name="array">数组</param>
+    /// <returns>字符串</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string DumpAsString<T>(this T[] array) => new ReadOnlySpan<T>(array).DumpAsString();
 }

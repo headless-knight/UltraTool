@@ -42,7 +42,7 @@ public static class SpanExtensions
     [Pure]
     public static string DumpAsString<T>(this ReadOnlySpan<T> source)
     {
-        var sb = new StringBuilder();
+        var sb = new StringBuilder(source.Length + 4);
         sb.Append("{ ");
         foreach (var item in source)
         {

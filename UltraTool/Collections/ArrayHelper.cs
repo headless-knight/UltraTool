@@ -10,7 +10,7 @@ public static class ArrayHelper
     /// </summary>
     /// <param name="length">长度</param>
     /// <returns>数组</returns>
-    /// <remarks>此API只在.NET5之后有效</remarks>
+    /// <remarks>此API在.NET5之后实际有效，此版本前效果等同直接分配数组</remarks>
     internal static T[] AllocateUninitializedArray<T>(int length) =>
 #if NET5_0_OR_GREATER
         GC.AllocateUninitializedArray<T>(length);

@@ -11,33 +11,33 @@ namespace UltraTool.Collections;
 public static class CollectionExtensions
 {
     /// <summary>
-    /// 判断集合是否包含任意一个序列元素
+    /// 判断集合是否包含指定序列的任意元素
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="values">序列</param>
-    /// <returns>是否包含</returns>
+    /// <returns>是否包含任意元素</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsAny<T>(this IReadOnlyCollection<T> coll, [InstantHandle] IEnumerable<T> values) =>
         coll is { Count: > 0 } && values.Any(coll.Contains);
 
     /// <summary>
-    /// 判断集合是否包含序列全部元素
+    /// 判断集合是否包含指定序列的全部元素
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="values">序列</param>
-    /// <returns>是否全部包含</returns>
+    /// <returns>是否包含全部元素</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsAll<T>(this IReadOnlyCollection<T> coll, [InstantHandle] IEnumerable<T> values) =>
         coll is { Count: > 0 } && values.All(coll.Contains);
 
     /// <summary>
-    /// 当满足条件时添加值
+    /// 当数据满足条件时添加
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="value">待添加值</param>
-    /// <param name="predicate">条件</param>
+    /// <param name="predicate">条件委托，入参(待添加值)</param>
     /// <returns>是否满足条件</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public static bool AddIf<T>(this ICollection<T> coll, T value, Func<T, bool> predicate)
@@ -49,12 +49,12 @@ public static class CollectionExtensions
     }
 
     /// <summary>
-    /// 添加传入集合中满足条件的元素
+    /// 批量添加传入序列中满足条件的元素
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="range">待添加集合</param>
-    /// <param name="predicate">条件</param>
-    /// <returns>满足添加的个数</returns>
+    /// <param name="predicate">条件委托，入参(待添加值)</param>
+    /// <returns>满足添加的数量</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public static int AddRangeIf<T>(this ICollection<T> coll, [InstantHandle] IEnumerable<T> range,
         Func<T, bool> predicate)
@@ -91,7 +91,7 @@ public static class CollectionExtensions
     }
 
     /// <summary>
-    /// 添加非Null数据
+    /// 添加非null数据，若数据不为null则添加并返回true
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="value">数据</param>
@@ -106,11 +106,11 @@ public static class CollectionExtensions
     }
 
     /// <summary>
-    /// 批量添加非Null数据
+    /// 批量添加非null数据，若数据不为null则添加，返回添加元素数量
     /// </summary>
     /// <param name="coll">集合</param>
-    /// <param name="range">被添加序列</param>
-    /// <returns>非null添加个数</returns>
+    /// <param name="range">待添加序列</param>
+    /// <returns>添加元素数量</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int AddNonNullRange<T>(this ICollection<T> coll, [InstantHandle] IEnumerable<T?> range) =>

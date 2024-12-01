@@ -114,6 +114,22 @@ public static class ListExtensions
     }
 
     /// <summary>
+    /// 删除列表中所有满足条件的元素
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="match">条件委托，入参(元素)</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void RemoveAll<T>(this IList<T> list, Func<T, bool> match)
+    {
+        for (var i = list.Count - 1; i >= 0; i--)
+        {
+            if (!match.Invoke(list[i])) continue;
+
+            list.RemoveAt(i);
+        }
+    }
+
+    /// <summary>
     /// 删除列表第一个元素
     /// </summary>
     /// <param name="list">列表</param>

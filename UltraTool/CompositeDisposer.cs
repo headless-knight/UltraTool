@@ -1,8 +1,11 @@
-﻿namespace UltraTool;
+﻿using JetBrains.Annotations;
+
+namespace UltraTool;
 
 /// <summary>
 /// 组合处置器
 /// </summary>
+[PublicAPI]
 public sealed class CompositeDisposer : IDisposable
 {
     private readonly IDisposable[] _disposables;
@@ -11,7 +14,7 @@ public sealed class CompositeDisposer : IDisposable
     /// 构造方法
     /// </summary>
     /// <param name="disposables">可处置对象序列</param>
-    public CompositeDisposer(IEnumerable<IDisposable> disposables)
+    public CompositeDisposer([InstantHandle] IEnumerable<IDisposable> disposables)
     {
         _disposables = disposables.ToArray();
     }
@@ -29,6 +32,7 @@ public sealed class CompositeDisposer : IDisposable
 /// <summary>
 /// 异步组合处置器
 /// </summary>
+[PublicAPI]
 public sealed class AsyncCompositeDisposer : IAsyncDisposable
 {
     private readonly IAsyncDisposable[] _disposables;
@@ -37,7 +41,7 @@ public sealed class AsyncCompositeDisposer : IAsyncDisposable
     /// 构造方法
     /// </summary>
     /// <param name="disposables">可处置对象序列</param>
-    public AsyncCompositeDisposer(IEnumerable<IAsyncDisposable> disposables)
+    public AsyncCompositeDisposer([InstantHandle] IEnumerable<IAsyncDisposable> disposables)
     {
         _disposables = disposables.ToArray();
     }
