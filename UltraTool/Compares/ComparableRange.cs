@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 namespace UltraTool.Compares;
 
 /// <summary>
-/// 比较范围
+/// 可比较区间
 /// </summary>
 [PublicAPI]
 public readonly struct ComparableRange<T> : IComparableRange<T> where T : IComparable<T>

@@ -66,6 +66,16 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <summary>
     /// 构造方法
     /// </summary>
+    /// <param name="collection">初始集合</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    public PooledDynamicArray([InstantHandle] IEnumerable<T> collection, bool clearArray = false) :
+        this(collection, DefaultPool, clearArray)
+    {
+    }
+
+    /// <summary>
+    /// 构造方法
+    /// </summary>
     /// <param name="capacity">初始容量</param>
     /// <param name="clearArray">是否归还时清空数组，默认false</param>
     public PooledDynamicArray(int capacity, bool clearArray = false) : this(capacity, DefaultPool, clearArray)
@@ -86,6 +96,18 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         {
             _array = _pool.Rent(capacity);
         }
+    }
+
+    /// <summary>
+    /// 构造方法
+    /// </summary>
+    /// <param name="collection">初始集合</param>
+    /// <param name="pool">数组池</param>
+    /// <param name="clearArray">是否归还时清空数组，默认false</param>
+    public PooledDynamicArray([InstantHandle] IEnumerable<T> collection, ArrayPool<T> pool, bool clearArray = false) :
+        this(collection.GetCountOrZero(), pool, clearArray)
+    {
+        AddRange(collection);
     }
 
     /// <summary>
@@ -144,7 +166,91 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <inheritdoc />
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int IndexOf(T item) => Array.IndexOf(_array!, item, Length);
+    public readonly int IndexOf(T item) => Array.IndexOf(GetRawArray(), item, 0, Length);
+
+    /// <summary>
+    /// 查找指定元素的索引，若不存在返回-1
+    /// </summary>
+    /// <param name="item">元素</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int IndexOf(T item, int startIndex) => IndexOf(item, startIndex, Length - startIndex);
+
+    /// <summary>
+    /// 查找指定元素的索引，若不存在返回-1
+    /// </summary>
+    /// <param name="item">元素</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int IndexOf(T item, int startIndex, int count)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
+        return Array.IndexOf(GetRawArray(), item, startIndex, count);
+    }
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int FindIndex(Predicate<T> match) => Array.FindIndex(GetRawArray(), 0, Length, match);
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int FindIndex(int startIndex, Predicate<T> match) =>
+        FindIndex(startIndex, Length - startIndex, match);
+
+    /// <summary>
+    /// 根据条件查找元素，若不存在则返回-1
+    /// </summary>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
+    /// <param name="match">匹配条件</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int FindIndex(int startIndex, int count, Predicate<T> match)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
+        return Array.FindIndex(GetRawArray(), startIndex, count, match);
+    }
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int BinarySearch(T value, IComparer<T>? comparer = null) =>
+        Array.BinarySearch(GetRawArray(), 0, Length, value, comparer);
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">查找长度</param>
+    /// <param name="value">值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>查找结果索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    public readonly int BinarySearch(int index, int length, T value, IComparer<T>? comparer = null)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
+        return Array.BinarySearch(GetRawArray(), index, length, value, comparer);
+    }
 
     /// <inheritdoc />
     public void Add(T item)
@@ -163,10 +269,10 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="range">元素序列</param>
     public void AddRange([InstantHandle] IEnumerable<T> range)
     {
-        var count = range.GetCountOrZero();
-        if (Length + count > Capacity)
+        var size = range.GetCountOrZero();
+        if (Length + size > Capacity)
         {
-            EnsureCapacity(Length + count);
+            EnsureCapacity(Length + size);
         }
 
         foreach (var item in range)
@@ -182,7 +288,6 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         {
             EnsureCapacity(Length + 1);
         }
-
 
         for (var i = Length - 1; i >= index; i--)
         {
@@ -275,6 +380,28 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         _array![Length--] = default!;
     }
 
+    /// <summary>
+    /// 删除列表中所有满足条件的元素
+    /// </summary>
+    /// <param name="match">条件委托，入参(元素)</param>
+    /// <returns>删除的元素数量</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public int RemoveAll(Func<T, bool> match)
+    {
+        if (_array is not { Length: > 0 }) return 0;
+
+        var count = 0;
+        for (var i = Length - 1; i >= 0; i--)
+        {
+            if (!match.Invoke(_array[i])) continue;
+
+            RemoveAt(i);
+            count++;
+        }
+
+        return count;
+    }
+
     /// <inheritdoc />
     public void CopyTo(T[] array, int arrayIndex) => Array.Copy(GetRawArray(), 0, array, arrayIndex, Length);
 
@@ -317,5 +444,6 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <remarks>内部数组所有权应归于池化数组</remarks>
     /// <returns>池化数组</returns>
+    [MustDisposeResource]
     internal PooledArray<T> BuildPooledArray() => new(_array!, Length, _pool, _clearArray);
 }

@@ -11,5 +11,5 @@ public interface IWeighted
     /// <summary>
     /// 权重
     /// </summary>
-    public int Weight { get; }
+    int Weight { get; }
 }

@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
-using UltraTool.Helpers;
 
 namespace UltraTool.Compares;
 
@@ -75,53 +74,4 @@ public static class CompareHelper
         RangeMode.CloseOpen => start.CompareTo(value) < 0 || end.CompareTo(value) >= 0,
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported range mode")
     };
-
-    /// <summary>
-    /// 返回两个值中的最小值
-    /// </summary>
-    /// <param name="value1">值1</param>
-    /// <param name="value2">值2</param>
-    /// <returns>最小值</returns>
-    /// <remarks>此方法迁移至MathHelper，请使用MathHelper.Min代替</remarks>
-    [Obsolete("Use MathHelper.Min instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Min<T>(in T value1, in T value2) where T : IComparable<T> => MathHelper.Min(value1, value2);
-
-    /// <summary>
-    /// 返回两个值中的最大值
-    /// </summary>
-    /// <param name="value1">值1</param>
-    /// <param name="value2">值2</param>
-    /// <returns>最大值</returns>
-    /// <remarks>此方法迁移至MathHelper，请使用MathHelper.Max代替</remarks>
-    [Obsolete("Use MathHelper.Max instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Max<T>(in T value1, in T value2) where T : IComparable<T> => MathHelper.Max(value1, value2);
-
-    /// <summary>
-    /// 返回三个值中的中间值
-    /// </summary>
-    /// <param name="value1">值1</param>
-    /// <param name="value2">值2</param>
-    /// <param name="value3">值3</param>
-    /// <returns>中间值</returns>
-    /// <remarks>此方法迁移至MathHelper，请使用MathHelper.Middle代替</remarks>
-    [Obsolete("Use MathHelper.Middle instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Middle<T>(in T value1, in T value2, in T value3) where T : IComparable<T> =>
-        MathHelper.Middle(value1, value2, value3);
-
-    /// <summary>
-    /// 返回三个值中的中间值
-    /// </summary>
-    /// <param name="value1">值1</param>
-    /// <param name="value2">值2</param>
-    /// <param name="value3">值3</param>
-    /// <param name="comparer">比较器</param>
-    /// <returns>中间值</returns>
-    /// <remarks>此方法迁移至MathHelper，请使用MathHelper.Middle代替</remarks>
-    [Obsolete("Use MathHelper.Middle instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Middle<T>(in T value1, in T value2, in T value3, IComparer<T> comparer) =>
-        MathHelper.Middle(value1, value2, value3, comparer);
 }

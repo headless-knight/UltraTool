@@ -118,15 +118,20 @@ public static class ListExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="match">条件委托，入参(元素)</param>
+    /// <returns>删除的元素数量</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void RemoveAll<T>(this IList<T> list, Func<T, bool> match)
+    public static int RemoveAll<T>(this IList<T> list, Func<T, bool> match)
     {
+        var count = 0;
         for (var i = list.Count - 1; i >= 0; i--)
         {
             if (!match.Invoke(list[i])) continue;
 
             list.RemoveAt(i);
+            count++;
         }
+
+        return count;
     }
 
     /// <summary>

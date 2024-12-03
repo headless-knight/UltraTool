@@ -260,7 +260,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly int IndexOf(T item) => Array.IndexOf(RawArray, item, 0, Length);
 
     /// <summary>
-    /// 朝朝指定元素的索引，若不存在返回-1
+    /// 查找指定元素的索引，若不存在返回-1
     /// </summary>
     /// <param name="item">元素</param>
     /// <param name="startIndex">起始索引</param>

@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace UltraTool;
 
@@ -27,6 +28,14 @@ public sealed class CompositeDisposer : IDisposable
             disposable.Dispose();
         }
     }
+
+    /// <summary>
+    /// 创建组合处置器
+    /// </summary>
+    /// <param name="disposables">可处置对象数组</param>
+    /// <returns>组合处置器</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static CompositeDisposer Create(params IDisposable[] disposables) => new(disposables);
 }
 
 /// <summary>
@@ -54,4 +63,12 @@ public sealed class AsyncCompositeDisposer : IAsyncDisposable
             await disposable.DisposeAsync().ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// 创建异步组合处置器
+    /// </summary>
+    /// <param name="disposables">可处置对象数组</param>
+    /// <returns>异步组合处置器</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AsyncCompositeDisposer Create(params IAsyncDisposable[] disposables) => new(disposables);
 }

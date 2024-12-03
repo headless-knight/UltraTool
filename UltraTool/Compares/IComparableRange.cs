@@ -16,7 +16,7 @@ public interface IComparableRange<T> : IRange<T> where T : IComparable<T>
     /// <returns>是否在范围内</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsIn(T value) => CompareHelper.InRangeInternal(value, Start, End, Mode);
+    bool IsIn(T value) => CompareHelper.InRangeInternal(value, Start, End, Mode);
 
     /// <summary>
     /// 判断指定值是否在范围外
@@ -25,5 +25,5 @@ public interface IComparableRange<T> : IRange<T> where T : IComparable<T>
     /// <returns>是否在范围外</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsOut(T value) => CompareHelper.OutRangeInternal(value, Start, End, Mode);
+    bool IsOut(T value) => CompareHelper.OutRangeInternal(value, Start, End, Mode);
 }
