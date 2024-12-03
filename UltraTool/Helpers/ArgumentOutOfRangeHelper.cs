@@ -8,41 +8,12 @@ namespace UltraTool.Helpers;
 internal static class ArgumentOutOfRangeHelper
 {
     /// <summary>
-    /// 如果值等于0则抛出异常
-    /// </summary>
-    /// <param name="value">值</param>
-    /// <param name="paramName">参数名</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfZero(int value,
-#if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression(nameof(value))]
-#endif
-        string? paramName = null)
-    {
-        if (value == 0) return;
-
-        throw new ArgumentOutOfRangeException(paramName, value, "The value must be not equal 0");
-    }
-
-    /// <summary>
     /// 如果值小于0则抛出异常
     /// </summary>
     /// <param name="value">值</param>
     /// <param name="paramName">参数名</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(int value,
-#if NETCOREAPP3_0_OR_GREATER
-        [CallerArgumentExpression(nameof(value))]
-#endif
-        string? paramName = null) => ThrowIfLessThan(value, 0, paramName);
-
-    /// <summary>
-    /// 如果值小于0则抛出异常
-    /// </summary>
-    /// <param name="value">值</param>
-    /// <param name="paramName">参数名</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfNegative(long value,
 #if NETCOREAPP3_0_OR_GREATER
         [CallerArgumentExpression(nameof(value))]
 #endif
