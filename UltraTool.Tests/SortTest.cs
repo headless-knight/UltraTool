@@ -17,107 +17,76 @@ public class SortTest
     [Fact]
     public void QuickSortTest()
     {
-        var list = new List<int>(50);
-        for (var i = 0; i < 50; i++)
+        var list = new List<int>(100);
+        for (var i = 0; i < 100; i++)
         {
             list.Add(Random.Shared.Next());
         }
 
-        list.QuickSort(10, 10);
-        for (var i = 10; i < 19; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
-
+        list.QuickSort(10, 20);
+        Assert.True(list.Skip(10).Take(20).IsSorted());
         list.QuickSort();
-        for (var i = 0; i < list.Count - 1; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
+        Assert.True(list.IsSorted());
     }
 
     [Fact]
     public void MergeSortTest()
     {
-        var list = new List<int>(50);
-        for (var i = 0; i < 50; i++)
+        var list = new List<int>(100);
+        for (var i = 0; i < 100; i++)
         {
             list.Add(Random.Shared.Next());
         }
 
-        list.MergeSort(10, 10);
-        for (var i = 10; i < 19; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
-
+        list.MergeSort(10, 20);
+        Assert.True(list.Skip(10).Take(20).IsSorted());
         list.MergeSort();
-        for (var i = 0; i < list.Count - 1; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
+        Assert.True(list.IsSorted());
     }
 
     [Fact]
     public void HeapSortTest()
     {
-        var list = new List<int>(50);
-        for (var i = 0; i < 50; i++)
+        var list = new List<int>(100);
+        for (var i = 0; i < 100; i++)
         {
             list.Add(Random.Shared.Next());
         }
 
-        list.HeapSort(10, 10);
-        for (var i = 10; i < 19; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
-
+        list.HeapSort(10, 20);
+        Assert.True(list.Skip(10).Take(20).IsSorted());
         list.HeapSort();
+        Assert.True(list.IsSorted());
     }
 
     [Fact]
     public void IntroSortTest()
     {
-        var list = new List<int>(100);
-        for (var i = 0; i < 100; i++)
+        var list = new List<int>(500);
+        for (var i = 0; i < 500; i++)
         {
             list.Add(Random.Shared.Next());
         }
 
-        list.IntroSort(10, 40);
-        for (var i = 10; i < 49; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
-
+        list.IntroSort(10, 50);
+        Assert.True(list.Skip(10).Take(50).IsSorted());
         list.IntroSort();
-        for (var i = 0; i < list.Count - 1; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
+        Assert.True(list.IsSorted());
     }
 
     [Fact]
     public void TimSortTest()
     {
-        var list = new List<int>(100);
-        for (var i = 0; i < 100; i++)
+        var list = new List<int>(500);
+        for (var i = 0; i < 500; i++)
         {
             list.Add(Random.Shared.Next());
         }
 
-        list.TimSort(10, 40);
-        for (var i = 10; i < 49; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
-
+        list.TimSort(10, 50);
+        Assert.True(list.Skip(10).Take(50).IsSorted());
         list.TimSort();
-        for (var i = 0; i < list.Count - 1; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
+        Assert.True(list.IsSorted());
     }
 
     [Fact]
@@ -130,9 +99,6 @@ public class SortTest
         }
 
         list.CountingSort(0, 99);
-        for (var i = 0; i < list.Count - 1; i++)
-        {
-            Assert.True(list[i] <= list[i + 1]);
-        }
+        Assert.True(list.IsSorted());
     }
 }

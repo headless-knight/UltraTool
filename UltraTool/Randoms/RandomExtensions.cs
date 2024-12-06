@@ -231,7 +231,7 @@ public static class RandomExtensions
 
         if (charPool.Length <= 0)
         {
-            throw new ArgumentException("Char pool must bot empty", nameof(charPool));
+            throw new ArgumentException("Char pool must not empty", nameof(charPool));
         }
 
         using var array = PooledArray.Get<char>(length, true);

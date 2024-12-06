@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿#if NET7_0_OR_GREATER
+using System.Numerics;
+#endif
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using UltraTool.Helpers;

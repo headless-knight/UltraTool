@@ -11,6 +11,9 @@ namespace UltraTool.Collections;
 [PublicAPI]
 public static class ListSortExtensions
 {
+    /// <summary>插入排序阈值</summary>
+    private const int InsertionSortThreshold = 16;
+
     #region 插入排序
 
     /// <summary>
@@ -138,12 +141,20 @@ public static class ListSortExtensions
     {
         if (left >= right) return;
 
+        var length = right - left + 1;
+        // 小于阈值，使用插入排序
+        if (length <= InsertionSortThreshold)
+        {
+            InsertionSortInternal(list, left, right, comparer);
+            return;
+        }
+
         // 分区操作后基准元素的正确位置
-        var pivotIndex = QuickSortPartition(list, left, right, comparer);
+        var mid = QuickSortPartition(list, left, right, comparer);
         // 递归排序左子数组
-        QuickSortInternal(list, left, pivotIndex, comparer);
+        QuickSortInternal(list, left, mid, comparer);
         // 递归排序右子数组
-        QuickSortInternal(list, pivotIndex + 1, right, comparer);
+        QuickSortInternal(list, mid + 1, right, comparer);
     }
 
     /// <summary>快速排序分区操作</summary>
@@ -200,8 +211,8 @@ public static class ListSortExtensions
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        using var temp = PooledArray.Get<T>(list.Count, true);
-        MergeSortInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temp.Span);
+        using var temporary = PooledArray.Get<T>(list.Count);
+        MergeSortInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temporary.Span);
     }
 
     /// <summary>
@@ -226,66 +237,25 @@ public static class ListSortExtensions
     public static void MergeSort<T>(this IList<T> list, int index, int length, Comparison<T> comparison) =>
         list.MergeSort(index, length, new ComparisonComparer<T>(comparison));
 
-    /// <summary>
-    /// 并行归并排序
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="comparer">元素比较器，默认为null</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void MergeSortParallel<T>(this IList<T> list, IComparer<T>? comparer = null) =>
-        list.MergeSortParallel(0, list.Count, comparer);
-
-    /// <summary>
-    /// 并行归并排序
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">长度</param>
-    /// <param name="comparer">元素比较器，默认为null</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void MergeSortParallel<T>(this IList<T> list, int index, int length, IComparer<T>? comparer = null)
-    {
-        if (length <= 0) return;
-
-        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        using var temp = PooledArray.Get<T>(list.Count, true);
-        MergeSortParallelInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temp);
-    }
-
-    /// <summary>
-    ///  并行归并排序
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="comparison">元素比较表达式</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void MergeSortParallel<T>(this IList<T> list, Comparison<T> comparison) =>
-        list.MergeSortParallel(0, list.Count, new ComparisonComparer<T>(comparison));
-
-    /// <summary>
-    ///  并行归并排序
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">长度</param>
-    /// <param name="comparison">元素比较表达式</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void MergeSortParallel<T>(this IList<T> list, int index, int length, Comparison<T> comparison) =>
-        list.MergeSortParallel(index, length, new ComparisonComparer<T>(comparison));
-
     /// <summary>归并排序，内部实现</summary>
-    private static void MergeSortInternal<T>(IList<T> list, int left, int right, IComparer<T> comparer, Span<T> temp)
+    private static void MergeSortInternal<T>(IList<T> list, int left, int right, IComparer<T> comparer,
+        Span<T> temporary)
     {
         if (left >= right) return;
+
+        var length = right - left + 1;
+        // 小于阈值，使用插入排序
+        if (length <= InsertionSortThreshold)
+        {
+            InsertionSortInternal(list, left, right, comparer);
+            return;
+        }
 
         var mid = (left + right) >> 1;
         // 递归地对左半部分进行排序
-        MergeSortInternal(list, left, mid, comparer, temp);
+        MergeSortInternal(list, left, mid, comparer, temporary);
         // 递归地对右半部分进行排序
-        MergeSortInternal(list, mid + 1, right, comparer, temp);
+        MergeSortInternal(list, mid + 1, right, comparer, temporary);
         // 如果左边最大的元素小于或等于右边最小的元素，则不需要合并
         if (comparer.Compare(list[mid], list[mid + 1]) <= 0)
         {
@@ -293,26 +263,7 @@ public static class ListSortExtensions
         }
 
         // 合并已排序的两部分
-        MergeSortMerge(list, left, mid, right, comparer, temp.Slice(left, right - left + 1));
-    }
-
-    /// <summary>并行归并排序，内部实现</summary>
-    private static void MergeSortParallelInternal<T>(IList<T> list, int left, int right, IComparer<T> comparer,
-        PooledArray<T> temp)
-    {
-        if (left >= right) return;
-
-        var mid = (left + right) >> 1;
-        Parallel.Invoke(() => MergeSortParallelInternal(list, left, mid, comparer, temp),
-            () => MergeSortParallelInternal(list, mid + 1, right, comparer, temp));
-        // 如果左边最大的元素小于或等于右边最小的元素，则不需要合并
-        if (comparer.Compare(list[mid], list[mid + 1]) <= 0)
-        {
-            return;
-        }
-
-        // 合并已排序的两部分
-        MergeSortMerge(list, left, mid, right, comparer, temp.Slice(left, right - left + 1));
+        MergeSortMerge(list, left, mid, right, comparer, temporary.Slice(left, length));
     }
 
     /// <summary>归并排序，合并操作</summary>
@@ -408,10 +359,17 @@ public static class ListSortExtensions
     /// <summary>堆排序，内部实现</summary>
     private static void HeapSortInternal<T>(IList<T> list, int left, int right, IComparer<T> comparer)
     {
-        var count = right - left + 1;
-        for (var i = left + (count / 2) - 1; i >= left; i--)
+        var length = right - left + 1;
+        // 小于阈值，使用插入排序
+        if (length <= InsertionSortThreshold)
         {
-            HeapSortHeapify(list, i, count, left, comparer);
+            InsertionSortInternal(list, left, right, comparer);
+            return;
+        }
+
+        for (var i = left + (length / 2) - 1; i >= left; i--)
+        {
+            HeapSortHeapify(list, i, length, left, comparer);
         }
 
         for (var i = right; i > left; i--)
@@ -424,31 +382,31 @@ public static class ListSortExtensions
     /// <summary>堆排序，堆化操作</summary>
     private static void HeapSortHeapify<T>(IList<T> list, int index, int length, int offset, IComparer<T> comparer)
     {
-        var largest = index;
-        var leftChild = 2 * (index - offset) + 1 + offset;
-        var rightChild = 2 * (index - offset) + 2 + offset;
-        if (leftChild < length + offset && comparer.Compare(list[leftChild], list[largest]) > 0)
+        while (true)
         {
-            largest = leftChild;
+            var largest = index;
+            var leftChild = 2 * (index - offset) + 1 + offset;
+            var rightChild = 2 * (index - offset) + 2 + offset;
+            if (leftChild < length + offset && comparer.Compare(list[leftChild], list[largest]) > 0)
+            {
+                largest = leftChild;
+            }
+
+            if (rightChild < length + offset && comparer.Compare(list[rightChild], list[largest]) > 0)
+            {
+                largest = rightChild;
+            }
+
+            if (largest == index) return;
+
+            list.Swap(index, largest);
+            index = largest;
         }
-
-        if (rightChild < length + offset && comparer.Compare(list[rightChild], list[largest]) > 0)
-        {
-            largest = rightChild;
-        }
-
-        if (largest == index) return;
-
-        list.Swap(index, largest);
-        HeapSortHeapify(list, largest, length, offset, comparer);
     }
 
     #endregion
 
     #region 内观排序
-
-    /// <summary>内观排序转插入排序阈值</summary>
-    private const int IntroInsertionSortThreshold = 16;
 
     /// <summary>
     /// 内观排序
@@ -488,12 +446,24 @@ public static class ListSortExtensions
     public static void IntroSort<T>(this IList<T> list, Comparison<T> comparison) =>
         list.IntroSort(0, list.Count, new ComparisonComparer<T>(comparison));
 
+    /// <summary>
+    /// 内观排序
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">排序长度</param>
+    /// <param name="comparison">元素比较表达式</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void IntroSort<T>(this IList<T> list, int index, int length, Comparison<T> comparison) =>
+        list.IntroSort(index, length, new ComparisonComparer<T>(comparison));
+
     /// <summary>内观排序，内部实现</summary>
     private static void IntroSortInternal<T>(IList<T> list, int left, int right, int depthLimit, IComparer<T> comparer)
     {
         var length = right - left + 1;
-        // 数量小于阈值，使用插入排序
-        if (length < IntroInsertionSortThreshold)
+        // 小于阈值，使用插入排序
+        if (length <= InsertionSortThreshold)
         {
             InsertionSortInternal(list, left, right, comparer);
             return;
@@ -613,7 +583,7 @@ public static class ListSortExtensions
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CountingSort(this IList<int> list, int maxValue, bool descending = false) =>
-        list.CountingSort(0, list.Count, 0, maxValue, descending);
+        list.CountingSort(0, maxValue, 0, list.Count, descending);
 
     /// <summary>
     /// 计数排序，元素值范围[minValue,maxValue]
@@ -625,49 +595,49 @@ public static class ListSortExtensions
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CountingSort(this IList<int> list, int minValue, int maxValue, bool descending = false) =>
-        list.CountingSort(0, list.Count, minValue, maxValue, descending);
+        list.CountingSort(minValue, maxValue, 0, list.Count, descending);
 
     /// <summary>
     /// 计数排序，元素值范围[0,maxValue]
     /// </summary>
     /// <param name="list">列表</param>
+    /// <param name="maxValue">最大值</param>
     /// <param name="index">起始索引</param>
     /// <param name="length">排序长度</param>
-    /// <param name="maxValue">最大值</param>
     /// <param name="descending">是否降序，默认为false</param>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CountingSort(this IList<int> list, int index, int length, int maxValue, bool descending = false)
-        => list.CountingSort(index, length, 0, maxValue, descending);
+    public static void CountingSort(this IList<int> list, int maxValue, int index, int length, bool descending = false)
+        => list.CountingSort(0, maxValue, index, length, descending);
 
     /// <summary>
     /// 计数排序，元素值范围[minValue,maxValue]
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">排序长度</param>
     /// <param name="minValue">最小值</param>
     /// <param name="maxValue">最大值</param>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">排序长度</param>
     /// <param name="descending">是否降序，默认为false</param>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void CountingSort(this IList<int> list, int index, int length, int minValue, int maxValue,
+    public static void CountingSort(this IList<int> list, int minValue, int maxValue, int index, int length,
         bool descending = false)
     {
         if (length <= 0) return;
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        var counter = new int[maxValue - minValue + 1];
+        var counting = new int[maxValue - minValue + 1];
         for (var i = index; i < index + length; i++)
         {
-            counter[list[i] - minValue]++;
+            counting[list[i] - minValue]++;
         }
 
         if (descending)
         {
             for (var i = length - 1; i >= 0; i--)
             {
-                for (var j = 0; j < counter[i]; j++)
+                for (var j = 0; j < counting[i]; j++)
                 {
                     list[index++] = i + minValue;
                 }
@@ -676,9 +646,9 @@ public static class ListSortExtensions
             return;
         }
 
-        for (var i = 0; i < counter.Length; i++)
+        for (var i = 0; i < counting.Length; i++)
         {
-            for (var j = 0; j < counter[i]; j++)
+            for (var j = 0; j < counting[i]; j++)
             {
                 list[index++] = i + minValue;
             }

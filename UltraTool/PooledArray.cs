@@ -146,7 +146,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <summary>
-    /// 长度
+    /// 有效长度
     /// </summary>
     public int Length { get; }
 

@@ -140,7 +140,7 @@ public static class IpHelper
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(maxValue, ushort.MaxValue);
         if (minValue > maxValue)
         {
-            throw new ArgumentException("minValue must less than maxValue");
+            throw new ArgumentException("MinValue must less than MaxValue");
         }
 
         var times = 0;

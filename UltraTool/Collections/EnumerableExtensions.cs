@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using JetBrains.Annotations;
+using UltraTool.Compares;
 using UltraTool.Randoms;
 
 namespace UltraTool.Collections;
@@ -34,6 +35,142 @@ public static class EnumerableExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAllNull<T>([InstantHandle] this IEnumerable<T?> source) =>
         source.All(static item => item == null);
+
+    /// <summary>
+    /// 判断序列是否已排序
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>是否已排序</returns>
+    [Pure]
+    public static bool IsSorted<T>([InstantHandle] this IEnumerable<T> source, IComparer<T>? comparer = null)
+    {
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext()) return true;
+
+        comparer ??= Comparer<T>.Default;
+        var prev = enumerator.Current;
+        while (enumerator.MoveNext())
+        {
+            if (comparer.Compare(prev, enumerator.Current) > 0)
+            {
+                return false;
+            }
+
+            prev = enumerator.Current;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 判断序列是否已排序
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparison">比较表达式</param>
+    /// <returns>是否已排序</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsSorted<T>([InstantHandle] this IEnumerable<T> source, Comparison<T> comparison)
+        => source.IsSorted(new ComparisonComparer<T>(comparison));
+
+    /// <summary>
+    /// 获取序列中的最小值与最大值
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>(最小值,最大值)</returns>
+    [Pure]
+    public static (T, T) MinMax<T>([InstantHandle] this IEnumerable<T> source, IComparer<T>? comparer = null)
+    {
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext()) throw new InvalidOperationException("Enumerable must be not empty");
+
+        comparer ??= Comparer<T>.Default;
+        var min = enumerator.Current;
+        var max = enumerator.Current;
+        while (enumerator.MoveNext())
+        {
+            if (comparer.Compare(min, enumerator.Current) > 0)
+            {
+                min = enumerator.Current;
+            }
+
+            if (comparer.Compare(max, enumerator.Current) < 0)
+            {
+                max = enumerator.Current;
+            }
+        }
+
+        return (min, max);
+    }
+
+    /// <summary>
+    /// 获取序列中的最小值与最大值
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparison">比较表达式</param>
+    /// <returns>(最小值,最大值)</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (T, T) MinMax<T>([InstantHandle] this IEnumerable<T> source, Comparison<T> comparison)
+        => source.MinMax(new ComparisonComparer<T>(comparison));
+
+    /// <summary>
+    /// 获取序列中的最小值与最大值，若序列为空则返回(default(T),default(T))
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>(最小值,最大值)</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (T?, T?) MinMaxOrDefault<T>([InstantHandle] this IEnumerable<T> source,
+        IComparer<T>? comparer = null) => source.MinMaxOrDefault(default!, comparer);
+
+    /// <summary>
+    /// 获取序列中的最小值与最大值，若序列为空则返回(默认值,默认值)
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="defaultValue">默认值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>(最小值,最大值)</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (T, T) MinMaxOrDefault<T>([InstantHandle] this IEnumerable<T> source, T defaultValue,
+        IComparer<T>? comparer = null) => source.MinMaxOrDefault(defaultValue, defaultValue, comparer);
+
+    /// <summary>
+    /// 获取序列中的最小值与最大值，若序列为空则返回(默认最小值,默认最大值)
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="defaultMin">默认最小值</param>
+    /// <param name="defaultMax">默认最大值</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>(最小值,最大值)</returns>
+    public static (T, T) MinMaxOrDefault<T>([InstantHandle] this IEnumerable<T> source, T defaultMin, T defaultMax,
+        IComparer<T>? comparer = null)
+    {
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext()) return (defaultMin, defaultMax);
+
+        comparer ??= Comparer<T>.Default;
+        var min = enumerator.Current;
+        var max = enumerator.Current;
+        while (enumerator.MoveNext())
+        {
+            if (comparer.Compare(min, enumerator.Current) > 0)
+            {
+                min = enumerator.Current;
+            }
+
+            if (comparer.Compare(max, enumerator.Current) < 0)
+            {
+                max = enumerator.Current;
+            }
+        }
+
+        return (min, max);
+    }
 
     #region 遍历操作
 

@@ -1,7 +1,5 @@
 using System.Collections;
-#if NET5_0_OR_GREATER
 using System.Collections.Immutable;
-#endif
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -22,6 +20,16 @@ public static class SetExtensions
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlySet<T> EmptyIfNull<T>(this IReadOnlySet<T>? set) => set ?? ImmutableHashSet<T>.Empty;
+#else
+    /// <summary>
+    /// 若为null则返回空集合，否则返回原集合
+    /// </summary>
+    /// <param name="set">集合</param>
+    /// <returns>原集合或空集合</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IReadOnlyCollection<T> EmptyIfNull<T>(this HashSet<T>? set) =>
+        set != null ? set : ImmutableHashSet<T>.Empty;
 #endif
 
     /// <summary>

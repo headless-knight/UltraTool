@@ -553,26 +553,13 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         return true;
     }
 
-    /// <inheritdoc />
-    public void RemoveAt(int index)
-    {
-        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
-        for (var i = index + 1; i < Length; i++)
-        {
-            _array![i - 1] = _array![i];
-        }
-
-        _array![Length--] = default!;
-    }
-
     /// <summary>
     /// 删除列表中所有满足条件的元素
     /// </summary>
-    /// <param name="match">条件委托，入参(元素)</param>
+    /// <param name="match">条件委托</param>
     /// <returns>删除的元素数量</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public int RemoveAll(Func<T, bool> match)
+    public int RemoveAll(Predicate<T> match)
     {
         if (_array is not { Length: > 0 }) return 0;
 
@@ -586,6 +573,19 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         }
 
         return count;
+    }
+
+    /// <inheritdoc />
+    public void RemoveAt(int index)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
+        for (var i = index + 1; i < Length; i++)
+        {
+            _array![i - 1] = _array![i];
+        }
+
+        _array![Length--] = default!;
     }
 
     /// <inheritdoc />
