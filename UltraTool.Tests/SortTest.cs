@@ -1,8 +1,9 @@
 ﻿using UltraTool.Collections;
+using Xunit.Abstractions;
 
 namespace UltraTool.Tests;
 
-public class SortTest
+public class SortTest(ITestOutputHelper output)
 {
     [Fact]
     public void InsertionSortTest()
@@ -98,7 +99,20 @@ public class SortTest
             list.Add(Random.Shared.Next(0, 100));
         }
 
-        list.CountingSort(0, 99);
+        list.CountingSort();
         Assert.True(list.IsSorted());
+    }
+
+    [Fact]
+    public void RadixSortTest()
+    {
+        var list = new List<int>(20);
+        for (var i = 0; i < 20; i++)
+        {
+            list.Add(Random.Shared.Next());
+        }
+
+        list.RadixSort(0, list.Count);
+        output.WriteLine(list.IsSorted().ToString());
     }
 }

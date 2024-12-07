@@ -211,8 +211,8 @@ public static class ListSortExtensions
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        using var temporary = PooledArray.Get<T>(list.Count);
-        MergeSortInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temporary.Span);
+        using var temporary = PooledArray.Get<T>(length);
+        MergeSortInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temporary.Span, index);
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public static class ListSortExtensions
 
     /// <summary>归并排序，内部实现</summary>
     private static void MergeSortInternal<T>(IList<T> list, int left, int right, IComparer<T> comparer,
-        Span<T> temporary)
+        Span<T> temporary, int offset)
     {
         if (left >= right) return;
 
@@ -253,9 +253,9 @@ public static class ListSortExtensions
 
         var mid = (left + right) >> 1;
         // 递归地对左半部分进行排序
-        MergeSortInternal(list, left, mid, comparer, temporary);
+        MergeSortInternal(list, left, mid, comparer, temporary, offset);
         // 递归地对右半部分进行排序
-        MergeSortInternal(list, mid + 1, right, comparer, temporary);
+        MergeSortInternal(list, mid + 1, right, comparer, temporary, offset);
         // 如果左边最大的元素小于或等于右边最小的元素，则不需要合并
         if (comparer.Compare(list[mid], list[mid + 1]) <= 0)
         {
@@ -263,12 +263,12 @@ public static class ListSortExtensions
         }
 
         // 合并已排序的两部分
-        MergeSortMerge(list, left, mid, right, comparer, temporary.Slice(left, length));
+        MergeSortMerge(list, left, mid, right, comparer, temporary.Slice(left - offset, length));
     }
 
     /// <summary>归并排序，合并操作</summary>
     private static void MergeSortMerge<T>(IList<T> list, int left, int mid, int right, IComparer<T> comparer,
-        Span<T> temp)
+        Span<T> temporary)
     {
         int i = left, j = mid + 1, k = 0;
         while (i <= mid && j <= right)
@@ -276,30 +276,30 @@ public static class ListSortExtensions
             // 将较小的元素复制到临时数组
             if (comparer.Compare(list[i], list[j]) <= 0)
             {
-                temp[k++] = list[i++];
+                temporary[k++] = list[i++];
             }
             else
             {
-                temp[k++] = list[j++];
+                temporary[k++] = list[j++];
             }
         }
 
         // 如果左半部分还有剩余元素，将其复制到临时数组
         while (i <= mid)
         {
-            temp[k++] = list[i++];
+            temporary[k++] = list[i++];
         }
 
         // 如果右半部分还有剩余元素，将其复制到临时数组
         while (j <= right)
         {
-            temp[k++] = list[j++];
+            temporary[k++] = list[j++];
         }
 
         // 将临时数组的排序结果复制回原数组
         for (i = 0; i < k; i++)
         {
-            list[left + i] = temp[i];
+            list[left + i] = temporary[i];
         }
     }
 
@@ -575,75 +575,62 @@ public static class ListSortExtensions
     #region 计数排序
 
     /// <summary>
-    /// 计数排序，元素值范围[0,maxValue]
+    /// 计数排序
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="maxValue">最大值</param>
-    /// <param name="descending">是否降序，默认为false</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CountingSort(this IList<int> list, int maxValue, bool descending = false) =>
-        list.CountingSort(0, maxValue, 0, list.Count, descending);
+    public static void CountingSort(this IList<int> list) =>
+        list.CountingSort(0, list.Count);
+
+    /// <summary>
+    /// 计数排序
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">排序长度</param>
+    public static void CountingSort(this IList<int> list, int index, int length)
+    {
+        if (length <= 0) return;
+
+        var minValue = list[index];
+        var maxValue = minValue;
+        var end = index + length - 1;
+        for (var i = index + 1; i <= end; i++)
+        {
+            if (list[i] < minValue)
+            {
+                minValue = list[i];
+            }
+
+            if (list[i] > maxValue)
+            {
+                maxValue = list[i];
+            }
+        }
+
+        list.CountingSort(index, length, minValue, maxValue);
+    }
 
     /// <summary>
     /// 计数排序，元素值范围[minValue,maxValue]
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="minValue">最小值</param>
-    /// <param name="maxValue">最大值</param>
-    /// <param name="descending">是否降序，默认为false</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CountingSort(this IList<int> list, int minValue, int maxValue, bool descending = false) =>
-        list.CountingSort(minValue, maxValue, 0, list.Count, descending);
-
-    /// <summary>
-    /// 计数排序，元素值范围[0,maxValue]
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="maxValue">最大值</param>
     /// <param name="index">起始索引</param>
     /// <param name="length">排序长度</param>
-    /// <param name="descending">是否降序，默认为false</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CountingSort(this IList<int> list, int maxValue, int index, int length, bool descending = false)
-        => list.CountingSort(0, maxValue, index, length, descending);
-
-    /// <summary>
-    /// 计数排序，元素值范围[minValue,maxValue]
-    /// </summary>
-    /// <param name="list">列表</param>
     /// <param name="minValue">最小值</param>
     /// <param name="maxValue">最大值</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">排序长度</param>
-    /// <param name="descending">是否降序，默认为false</param>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void CountingSort(this IList<int> list, int minValue, int maxValue, int index, int length,
-        bool descending = false)
+    public static void CountingSort(this IList<int> list, int index, int length,
+        int minValue, int maxValue)
     {
         if (length <= 0) return;
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        var counting = new int[maxValue - minValue + 1];
+        using var counting = PooledArray.Get<int>(maxValue - minValue + 1);
         for (var i = index; i < index + length; i++)
         {
             counting[list[i] - minValue]++;
-        }
-
-        if (descending)
-        {
-            for (var i = length - 1; i >= 0; i--)
-            {
-                for (var j = 0; j < counting[i]; j++)
-                {
-                    list[index++] = i + minValue;
-                }
-            }
-
-            return;
         }
 
         for (var i = 0; i < counting.Length; i++)
@@ -654,6 +641,70 @@ public static class ListSortExtensions
             }
         }
     }
+
+    #endregion
+
+    #region 基数排序
+
+    private const int RadixSortMaxExp = 1000000000;
+
+    /// <summary>
+    /// 基数排序
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index">索引</param>
+    /// <param name="length">长度</param>
+    public static void RadixSort(this IList<int> list, int index, int length)
+    {
+        if (length <= 0) return;
+
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
+        var end = index + length - 1;
+        using var temporary = PooledArray.Get<int>(length);
+        RadixSortInternal(list, index, end, RadixSortMaxExp, temporary.Span);
+    }
+
+    /// <summary>基数排序，内部实现</summary>
+    private static void RadixSortInternal(IList<int> list, int start, int end, int maxValue, Span<int> temporary)
+    {
+        // 按照从低位到高位的顺序遍历
+        for (var exp = 1; exp <= maxValue; exp *= 10)
+        {
+            RadixSortRound(list, start, end, exp, temporary);
+        }
+    }
+
+    private static void RadixSortRound(IList<int> list, int start, int end, int exp, Span<int> temporary)
+    {
+        Span<int> counting = stackalloc int[10];
+        for (var i = start; i <= end; i++)
+        {
+            counting[RadixSortDigit(list[i], exp)]++;
+        }
+
+        for (var i = 1; i < 10; i++)
+        {
+            counting[i] += counting[i - 1];
+        }
+
+        for (var i = end; i >= start; i--)
+        {
+            var count = counting[RadixSortDigit(list[i], exp)]--;
+            temporary[count - 1] = list[i];
+        }
+
+        for (var i = start; i <= end; i++)
+        {
+            list[i] = temporary[i - start];
+        }
+    }
+
+    /// <summary>基数排序，获取数字指定位</summary>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int RadixSortDigit(int value, int exp) =>
+        value / exp % 10;
 
     #endregion
 }
