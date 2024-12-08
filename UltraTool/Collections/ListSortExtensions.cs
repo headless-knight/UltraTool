@@ -597,15 +597,9 @@ public static class ListSortExtensions
         var end = index + length - 1;
         for (var i = index + 1; i <= end; i++)
         {
-            if (list[i] < minValue)
-            {
-                minValue = list[i];
-            }
-
-            if (list[i] > maxValue)
-            {
-                maxValue = list[i];
-            }
+            var value = list[i];
+            minValue = Math.Min(value, minValue);
+            maxValue = Math.Max(value, maxValue);
         }
 
         list.CountingSort(index, length, minValue, maxValue);

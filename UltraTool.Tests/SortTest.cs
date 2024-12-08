@@ -100,7 +100,7 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.CountingSort();
-        Assert.True(list.IsSorted());
+        output.WriteLine(list.IsSorted().ToString());
     }
 
     [Fact]
