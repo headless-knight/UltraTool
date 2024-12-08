@@ -622,7 +622,8 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
         using var counting = PooledArray.Get<int>(maxValue - minValue + 1);
-        for (var i = index; i < index + length; i++)
+        var end = index + length - 1;
+        for (var i = index; i <=end; i++)
         {
             counting[list[i] - minValue]++;
         }

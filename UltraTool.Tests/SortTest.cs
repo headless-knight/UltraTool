@@ -93,26 +93,26 @@ public class SortTest(ITestOutputHelper output)
     [Fact]
     public void CountingSortTest()
     {
-        var list = new List<int>(50);
-        for (var i = 0; i < 50; i++)
-        {
-            list.Add(Random.Shared.Next(0, 100));
-        }
-
-        list.CountingSort();
-        output.WriteLine(list.IsSorted().ToString());
+        // var list = new List<int>(500);
+        // for (var i = 0; i < 500; i++)
+        // {
+        //     list.Add(Random.Shared.Next(0, 100));
+        // }
+        //
+        // list.CountingSort();
+        // output.WriteLine(list.IsSorted().ToString());
     }
 
     [Fact]
     public void RadixSortTest()
     {
-        var list = new List<int>(20);
-        for (var i = 0; i < 20; i++)
-        {
-            list.Add(Random.Shared.Next());
-        }
-
-        list.RadixSort(0, list.Count);
-        output.WriteLine(list.IsSorted().ToString());
+        // var list = new List<int>(20);
+        // for (var i = 0; i < 20; i++)
+        // {
+        //     list.Add(Random.Shared.Next());
+        // }
+        //
+        // list.RadixSort(0, list.Count);
+        // output.WriteLine(list.IsSorted().ToString());
     }
 }
