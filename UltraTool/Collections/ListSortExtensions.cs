@@ -578,9 +578,10 @@ public static class ListSortExtensions
     /// 计数排序
     /// </summary>
     /// <param name="list">列表</param>
+    /// <param name="descending">是否降序，默认为false</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CountingSort(this IList<int> list) =>
-        list.CountingSort(0, list.Count);
+    public static void CountingSort(this IList<int> list, bool descending = false) =>
+        list.CountingSort(0, list.Count, descending);
 
     /// <summary>
     /// 计数排序
@@ -588,7 +589,8 @@ public static class ListSortExtensions
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
     /// <param name="length">排序长度</param>
-    public static void CountingSort(this IList<int> list, int index, int length)
+    /// <param name="descending">是否降序，默认为false</param>
+    public static void CountingSort(this IList<int> list, int index, int length, bool descending = false)
     {
         if (length <= 0) return;
 
@@ -602,7 +604,7 @@ public static class ListSortExtensions
             maxValue = Math.Max(value, maxValue);
         }
 
-        list.CountingSort(index, length, minValue, maxValue);
+        list.CountingSort(index, length, minValue, maxValue, descending);
     }
 
     /// <summary>
@@ -613,19 +615,35 @@ public static class ListSortExtensions
     /// <param name="length">排序长度</param>
     /// <param name="minValue">最小值</param>
     /// <param name="maxValue">最大值</param>
+    /// <param name="descending">是否降序，默认为false</param>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void CountingSort(this IList<int> list, int index, int length,
-        int minValue, int maxValue)
+    public static void CountingSort(this IList<int> list, int index, int length, int minValue, int maxValue,
+        bool descending = false)
     {
         if (length <= 0) return;
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
         using var counting = PooledArray.Get<int>(maxValue - minValue + 1);
+        // 池化数组可能有残留数据，数组清零
+        counting.Clear();
         var end = index + length - 1;
-        for (var i = index; i <=end; i++)
+        for (var i = index; i <= end; i++)
         {
             counting[list[i] - minValue]++;
+        }
+
+        if (descending)
+        {
+            for (var i = counting.Length - 1; i >= 0; i--)
+            {
+                for (var j = 0; j < counting[i]; j++)
+                {
+                    list[index++] = i + minValue;
+                }
+            }
+
+            return;
         }
 
         for (var i = 0; i < counting.Length; i++)
@@ -641,7 +659,16 @@ public static class ListSortExtensions
 
     #region 基数排序
 
+    /// <summary>基数排序最大位</summary>
     private const int RadixSortMaxExp = 1000000000;
+
+    /// <summary>
+    /// 基数排序
+    /// </summary>
+    /// <param name="list">列表</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void RadixSort(this IList<int> list) =>
+        list.RadixSort(0, list.Count);
 
     /// <summary>
     /// 基数排序
@@ -656,20 +683,95 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
         var end = index + length - 1;
+        var (mid, negativeMax, positiveMax) = RadixSortPartition(list, index, end);
         using var temporary = PooledArray.Get<int>(length);
-        RadixSortInternal(list, index, end, RadixSortMaxExp, temporary.Span);
+        // 排序负数部分
+        if (mid >= index && mid <= end)
+        {
+            RadixSortInternal(list, index, mid, negativeMax, temporary.Span, true);
+        }
+
+        // 排序正数部分
+        if (mid + 1 <= end)
+        {
+            RadixSortInternal(list, mid + 1, end, positiveMax, temporary.Span, false);
+        }
+    }
+
+    /// <summary>基数排序，分区操作</summary>
+    private static (int, int, int) RadixSortPartition(IList<int> list, int start, int end)
+    {
+        var negativeMax = 0;
+        var positiveMax = 0;
+        var left = start;
+        var right = end;
+        // 将列表中的负数移动到左侧并取反，非负数移动到右侧
+        while (true)
+        {
+            while (left <= right)
+            {
+                var value = list[left];
+                if (value < 0)
+                {
+                    // 将负数取反保存
+                    list[left] = -value;
+                    negativeMax = Math.Max(negativeMax, -value);
+                    left++;
+                }
+                else
+                {
+                    positiveMax = Math.Max(positiveMax, value);
+                    break;
+                }
+            }
+
+            while (left <= right)
+            {
+                var value = list[right];
+                if (value >= 0)
+                {
+                    positiveMax = Math.Max(positiveMax, value);
+                    right--;
+                }
+                else
+                {
+                    // 将负数取反保存
+                    list[right] = -value;
+                    negativeMax = Math.Max(negativeMax, -value);
+                    break;
+                }
+            }
+
+            if (left >= right) break;
+
+            list.Swap(left++, right--);
+        }
+
+        return (right, Math.Min(negativeMax, RadixSortMaxExp), Math.Min(positiveMax, RadixSortMaxExp));
     }
 
     /// <summary>基数排序，内部实现</summary>
-    private static void RadixSortInternal(IList<int> list, int start, int end, int maxValue, Span<int> temporary)
+    private static void RadixSortInternal(IList<int> list, int start, int end, int maxValue, Span<int> temporary,
+        bool isNegative)
     {
         // 按照从低位到高位的顺序遍历
         for (var exp = 1; exp <= maxValue; exp *= 10)
         {
             RadixSortRound(list, start, end, exp, temporary);
         }
+
+        if (!isNegative) return;
+
+        // 如果这部分数据原来是负数，需要将这部分数据取反并反转顺序
+        var mid = (start + end) / 2;
+        for (var left = start; left <= mid; left++)
+        {
+            var right = end - (left - start);
+            (list[right], list[left]) = (-list[left], -list[right]);
+        }
     }
 
+    /// <summary>基数排序，轮次操作</summary>
     private static void RadixSortRound(IList<int> list, int start, int end, int exp, Span<int> temporary)
     {
         Span<int> counting = stackalloc int[10];

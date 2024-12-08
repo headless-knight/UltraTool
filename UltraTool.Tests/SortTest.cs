@@ -1,9 +1,8 @@
 ﻿using UltraTool.Collections;
-using Xunit.Abstractions;
 
 namespace UltraTool.Tests;
 
-public class SortTest(ITestOutputHelper output)
+public class SortTest
 {
     [Fact]
     public void InsertionSortTest()
@@ -25,9 +24,9 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.QuickSort(10, 20);
-        Assert.True(list.Skip(10).Take(20).IsSorted());
+        Assert.True(list.Skip(10).Take(20).IsOrdered());
         list.QuickSort();
-        Assert.True(list.IsSorted());
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
@@ -40,9 +39,9 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.MergeSort(10, 20);
-        Assert.True(list.Skip(10).Take(20).IsSorted());
+        Assert.True(list.Skip(10).Take(20).IsOrdered());
         list.MergeSort();
-        Assert.True(list.IsSorted());
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
@@ -55,9 +54,9 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.HeapSort(10, 20);
-        Assert.True(list.Skip(10).Take(20).IsSorted());
+        Assert.True(list.Skip(10).Take(20).IsOrdered());
         list.HeapSort();
-        Assert.True(list.IsSorted());
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
@@ -70,9 +69,9 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.IntroSort(10, 50);
-        Assert.True(list.Skip(10).Take(50).IsSorted());
+        Assert.True(list.Skip(10).Take(50).IsOrdered());
         list.IntroSort();
-        Assert.True(list.IsSorted());
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
@@ -85,34 +84,34 @@ public class SortTest(ITestOutputHelper output)
         }
 
         list.TimSort(10, 50);
-        Assert.True(list.Skip(10).Take(50).IsSorted());
+        Assert.True(list.Skip(10).Take(50).IsOrdered());
         list.TimSort();
-        Assert.True(list.IsSorted());
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
     public void CountingSortTest()
     {
-        // var list = new List<int>(500);
-        // for (var i = 0; i < 500; i++)
-        // {
-        //     list.Add(Random.Shared.Next(0, 100));
-        // }
-        //
-        // list.CountingSort();
-        // output.WriteLine(list.IsSorted().ToString());
+        var list = new List<int>(500);
+        for (var i = 0; i < 500; i++)
+        {
+            list.Add(Random.Shared.Next(-100, 100));
+        }
+
+        list.CountingSort();
+        Assert.True(list.IsOrdered());
     }
 
     [Fact]
     public void RadixSortTest()
     {
-        // var list = new List<int>(20);
-        // for (var i = 0; i < 20; i++)
-        // {
-        //     list.Add(Random.Shared.Next());
-        // }
-        //
-        // list.RadixSort(0, list.Count);
-        // output.WriteLine(list.IsSorted().ToString());
+        var list = new List<int>(21);
+        for (var i = 0; i < 21; i++)
+        {
+            list.Add(Random.Shared.Next(-100, 100));
+        }
+
+        list.RadixSort();
+        Assert.True(list.IsOrdered());
     }
 }

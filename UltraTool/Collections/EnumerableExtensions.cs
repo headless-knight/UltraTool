@@ -37,13 +37,13 @@ public static class EnumerableExtensions
         source.All(static item => item == null);
 
     /// <summary>
-    /// 判断序列是否已排序
+    /// 判断序列是否有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparer">比较器，默认为null</param>
     /// <returns>是否已排序</returns>
     [Pure]
-    public static bool IsSorted<T>([InstantHandle] this IEnumerable<T> source, IComparer<T>? comparer = null)
+    public static bool IsOrdered<T>([InstantHandle] this IEnumerable<T> source, IComparer<T>? comparer = null)
     {
         using var enumerator = source.GetEnumerator();
         if (!enumerator.MoveNext()) return true;
@@ -64,15 +64,53 @@ public static class EnumerableExtensions
     }
 
     /// <summary>
-    /// 判断序列是否已排序
+    /// 判断序列是否有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparison">比较表达式</param>
     /// <returns>是否已排序</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsSorted<T>([InstantHandle] this IEnumerable<T> source, Comparison<T> comparison)
-        => source.IsSorted(new ComparisonComparer<T>(comparison));
+    public static bool IsOrdered<T>([InstantHandle] this IEnumerable<T> source, Comparison<T> comparison)
+        => source.IsOrdered(new ComparisonComparer<T>(comparison));
+
+    /// <summary>
+    /// 判断序列是否降序有序
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparer">比较器，默认为null</param>
+    /// <returns>是否降序有序</returns>
+    [Pure]
+    public static bool IsOrderedDescending<T>([InstantHandle] this IEnumerable<T> source, IComparer<T>? comparer = null)
+    {
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext()) return true;
+
+        comparer ??= Comparer<T>.Default;
+        var prev = enumerator.Current;
+        while (enumerator.MoveNext())
+        {
+            if (comparer.Compare(enumerator.Current, prev) > 0)
+            {
+                return false;
+            }
+
+            prev = enumerator.Current;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 判断序列是否降序有序
+    /// </summary>
+    /// <param name="source">序列</param>
+    /// <param name="comparison">比较表达式</param>
+    /// <returns>是否降序有序</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsOrderedDescending<T>([InstantHandle] this IEnumerable<T> source, Comparison<T> comparison)
+        => source.IsOrderedDescending(new ComparisonComparer<T>(comparison));
 
     /// <summary>
     /// 获取序列中的最小值与最大值
