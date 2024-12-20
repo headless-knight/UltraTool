@@ -509,13 +509,13 @@ public static class RandomExtensions
     [Pure]
     public static int NextWeightedIndex(this Random random, [InstantHandle] IEnumerable<int> weights)
     {
-        var accumulation = WeightsAccumulation(weights);
-        if (accumulation is not { Count: > 0 })
+        using var accumulation = WeightsAccumulation(weights);
+        if (accumulation is not { Length: > 0 })
         {
             throw new ArgumentException("Collection must not empty", nameof(weights));
         }
 
-        return NextWeightedIndexForAccumulation(random, accumulation);
+        return NextWeightedIndexForAccumulation(random, accumulation.GetReadOnlySpan());
     }
 
     /// <summary>
@@ -528,13 +528,13 @@ public static class RandomExtensions
     public static int NextWeightedIndex<T>(this Random random, [InstantHandle] IEnumerable<T> weightItems)
         where T : IWeighted
     {
-        var accumulation = WeightsAccumulation(weightItems);
-        if (accumulation is not { Count: > 0 })
+        using var accumulation = WeightsAccumulation(weightItems);
+        if (accumulation is not { Length: > 0 })
         {
             throw new ArgumentException("Collection must not empty", nameof(weightItems));
         }
 
-        return NextWeightedIndexForAccumulation(random, accumulation);
+        return NextWeightedIndexForAccumulation(random, accumulation.GetReadOnlySpan());
     }
 
     /// <summary>
@@ -550,13 +550,13 @@ public static class RandomExtensions
     {
         if (count <= 0) return [];
 
-        var accumulation = WeightsAccumulation(weights);
-        if (accumulation is not { Count: > 0 })
+        using var accumulation = WeightsAccumulation(weights);
+        if (accumulation is not { Length: > 0 })
         {
             throw new ArgumentException("Collection must not empty", nameof(weights));
         }
 
-        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
         return indexes.CalculateArray();
     }
 
@@ -574,20 +574,20 @@ public static class RandomExtensions
     {
         if (count <= 0) return [];
 
-        var accumulation = WeightsAccumulation(weightItems);
-        if (accumulation is not { Count: > 0 })
+        using var accumulation = WeightsAccumulation(weightItems);
+        if (accumulation is not { Length: > 0 })
         {
             throw new ArgumentException("Collection must not empty", nameof(weightItems));
         }
 
-        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
         return indexes.CalculateArray();
     }
 
     /// <summary>通过权重累和数组计算带权随机索引</summary>
-    private static int NextWeightedIndexForAccumulation(this Random random, IReadOnlyList<int> accumulation)
+    private static int NextWeightedIndexForAccumulation(this Random random, ReadOnlySpan<int> accumulation)
     {
-        if (accumulation is not { Count: > 0 })
+        if (accumulation is not { Length: > 0 })
         {
             throw new ArgumentException("Collection must not empty", nameof(accumulation));
         }
@@ -596,7 +596,7 @@ public static class RandomExtensions
     }
 
     /// <summary>通过权重累和数组计算带权随机索引，内部实现</summary>
-    private static int NextWeightedIndexInternal(Random random, IReadOnlyList<int> accumulation)
+    private static int NextWeightedIndexInternal(Random random, ReadOnlySpan<int> accumulation)
     {
         var next = random.Next(1, accumulation[^1] + 1);
         // 利用二分查找与权重累和数组查找索引
@@ -617,8 +617,9 @@ public static class RandomExtensions
     [Pure]
     public static T NextWeighted<T>(this Random random, [InstantHandle] IEnumerable<KeyValuePair<T, int>> itemWeights)
     {
-        var items = new List<T>(itemWeights.GetCountOrZero());
-        var accumulation = new List<int>(itemWeights.GetCountOrZero());
+        var size = itemWeights.GetCountOrZero();
+        using var items = new PooledDynamicArray<T>(size, true);
+        using var accumulation = new PooledDynamicArray<int>(size, true);
         var weightSum = 0;
         foreach (var (item, weight) in itemWeights)
         {
@@ -632,7 +633,7 @@ public static class RandomExtensions
             accumulation.Add(weightSum);
         }
 
-        var index = random.NextWeightedIndexForAccumulation(accumulation);
+        var index = random.NextWeightedIndexForAccumulation(accumulation.GetArraySegment());
         return items[index];
     }
 
@@ -650,8 +651,9 @@ public static class RandomExtensions
         if (count <= 0) return [];
 
         var result = ArrayHelper.AllocateUninitializedArray<T>(count);
-        var items = new List<T>(itemWeights.GetCountOrZero());
-        var accumulation = new List<int>(itemWeights.GetCountOrZero());
+        var size = itemWeights.GetCountOrZero();
+        using var items = new PooledDynamicArray<T>(size, true);
+        using var accumulation = new PooledDynamicArray<int>(size, true);
         var weightSum = 0;
         foreach (var (item, weight) in itemWeights)
         {
@@ -666,7 +668,7 @@ public static class RandomExtensions
         }
 
         var i = 0;
-        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+        var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
         while (indexes.MoveNext())
         {
             result[i++] = items[indexes.Current];
@@ -734,9 +736,9 @@ public static class RandomExtensions
         {
             case IList<T> weightedList:
             {
-                var accumulation = WeightsAccumulation(weightedList);
+                using var accumulation = WeightsAccumulation(weightedList);
                 var i = 0;
-                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedList[indexes.Current];
@@ -746,9 +748,9 @@ public static class RandomExtensions
             }
             case IReadOnlyList<T> weightedList:
             {
-                var accumulation = WeightsAccumulation(weightedList);
+                using var accumulation = WeightsAccumulation(weightedList);
                 var i = 0;
-                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedList[indexes.Current];
@@ -759,9 +761,9 @@ public static class RandomExtensions
             default:
             {
                 var weightedArray = weightedItems.ToArray();
-                var accumulation = WeightsAccumulation(weightedArray);
+                using var accumulation = WeightsAccumulation(weightedArray);
                 var i = 0;
-                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation, count);
+                var indexes = new AccumulationWeightedIndexEnumerator(random, accumulation.GetArraySegment(), count);
                 while (indexes.MoveNext())
                 {
                     result[i++] = weightedArray[indexes.Current];
@@ -968,9 +970,10 @@ public static class RandomExtensions
     }
 
     /// <summary>权重累和计算，返回权重累和池化数组</summary>
-    private static List<int> WeightsAccumulation([InstantHandle] IEnumerable<int> weights)
+    [MustDisposeResource]
+    private static PooledDynamicArray<int> WeightsAccumulation([InstantHandle] IEnumerable<int> weights)
     {
-        var accumulation = new List<int>(weights.GetCountOrZero());
+        var accumulation = new PooledDynamicArray<int>(weights.GetCountOrZero(), true);
         var sum = 0;
         foreach (var weight in weights)
         {
@@ -987,9 +990,11 @@ public static class RandomExtensions
     }
 
     /// <summary>权重累和计算，返回权重累和池化数组</summary>
-    private static List<int> WeightsAccumulation<T>([InstantHandle] IEnumerable<T> weightedItems) where T : IWeighted
+    [MustDisposeResource]
+    private static PooledDynamicArray<int> WeightsAccumulation<T>([InstantHandle] IEnumerable<T> weightedItems)
+        where T : IWeighted
     {
-        var accumulation = new List<int>(weightedItems.GetCountOrZero());
+        var accumulation = new PooledDynamicArray<int>(weightedItems.GetCountOrZero(), true);
         var sum = 0;
         foreach (var item in weightedItems)
         {
@@ -1010,7 +1015,7 @@ public static class RandomExtensions
     private struct AccumulationWeightedIndexEnumerator : IEnumerator<int>
     {
         private readonly Random _random;
-        private readonly IReadOnlyList<int> _accumulation;
+        private readonly ArraySegment<int> _accumulation;
         private readonly int _count;
         private int _generated;
 
@@ -1018,7 +1023,7 @@ public static class RandomExtensions
         public int Current { get; private set; }
 
         /// <inheritdoc />
-        object IEnumerator.Current => Current;
+        readonly object IEnumerator.Current => Current;
 
         /// <summary>
         /// 构造方法
@@ -1026,7 +1031,7 @@ public static class RandomExtensions
         /// <param name="random">随机实例</param>
         /// <param name="accumulation">累和数组</param>
         /// <param name="count">随机次数</param>
-        public AccumulationWeightedIndexEnumerator(Random random, IReadOnlyList<int> accumulation, int count)
+        public AccumulationWeightedIndexEnumerator(Random random, ArraySegment<int> accumulation, int count)
         {
             _random = random;
             _accumulation = accumulation;
@@ -1055,7 +1060,7 @@ public static class RandomExtensions
         /// 按权重累和计算，返回权重索引数组
         /// </summary>
         /// <returns>权重索引数组</returns>
-        public int[] CalculateArray()
+        public readonly int[] CalculateArray()
         {
             var result = ArrayHelper.AllocateUninitializedArray<int>(_count);
             for (var i = 0; i < _count; i++)
@@ -1067,7 +1072,7 @@ public static class RandomExtensions
         }
 
         /// <inheritdoc />
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
     }

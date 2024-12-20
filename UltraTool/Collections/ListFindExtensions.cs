@@ -29,23 +29,20 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="count">查找数量</param>
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int IndexOf<T>(this IReadOnlyList<T> list, int index, int length, T value,
+    public static int IndexOf<T>(this IReadOnlyList<T> list, int index, int count, T value,
         IEqualityComparer<T>? comparer = null)
     {
-        if (index + length > list.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length), length, "The range must less than list count");
-        }
+        if (count <= 0) return -1;
 
-        if (list is not { Count: > 0 }) return -1;
-
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         comparer ??= EqualityComparer<T>.Default;
-        var end = index + length;
+        var end = index + count;
         for (var i = index; i < end; i++)
         {
             if (comparer.Equals(list[i], value)) return i;
@@ -70,22 +67,22 @@ public static class ListFindExtensions
     /// 从后往前查找列表中第一个与传入值相等的索引
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="startIndex">开始索引</param>
+    /// <param name="index">起始索引</param>
     /// <param name="count">查找数量</param>
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int LastIndexOf<T>(this IReadOnlyList<T> list, int startIndex, int count, T value,
+    public static int LastIndexOf<T>(this IReadOnlyList<T> list, int index, int count, T value,
         IEqualityComparer<T>? comparer = null)
     {
         if (count <= 0) return -1;
 
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, list.Count);
-        ArgumentOutOfRangeHelper.ThrowIfLessThan(startIndex - count + 1, 0);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, list.Count);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index - count + 1);
         comparer ??= EqualityComparer<T>.Default;
-        var num = startIndex - count;
-        for (var i = startIndex; i > num; i--)
+        var num = index - count;
+        for (var i = index; i > num; i--)
         {
             if (comparer.Equals(list[i], value)) return i;
         }
@@ -110,23 +107,20 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="count">查找数量</param>
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引序列</returns>
     [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
-    public static IEnumerable<int> IndexesOf<T>(this IReadOnlyList<T> list, int index, int length, T value,
+    public static IEnumerable<int> IndexesOf<T>(this IReadOnlyList<T> list, int index, int count, T value,
         IEqualityComparer<T>? comparer = null)
     {
-        if (index + length > list.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length), length, "The range must less than list count");
-        }
+        if (count <= 0) yield break;
 
-        if (list is not { Count: > 0 }) yield break;
-
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         comparer ??= EqualityComparer<T>.Default;
-        var end = index + length;
+        var end = index + count;
         for (var i = index; i < end; i++)
         {
             if (comparer.Equals(list[i], value)) yield return i;
@@ -134,7 +128,7 @@ public static class ListFindExtensions
     }
 
     /// <summary>
-    /// 返回列表中符合匹配条件的第一个元素的索引
+    /// 返回列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="match">匹配委托，入参(遍历元素)</param>
@@ -145,21 +139,22 @@ public static class ListFindExtensions
         list.FindIndex(0, list.Count, match);
 
     /// <summary>
-    /// 返回列表中符合匹配条件的第一个元素的索引
+    /// 返回列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
     /// <param name="match">匹配委托，入参(遍历元素)</param>
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int FindIndex<T>(this IReadOnlyList<T> list, int index, int length, Predicate<T> match)
+    public static int FindIndex<T>(this IReadOnlyList<T> list, int startIndex, int count, Predicate<T> match)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 }) return -1;
+        if (count <= 0) return -1;
 
-        var end = index + length;
-        for (var i = index; i < end; i++)
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, list.Count);
+        var end = startIndex + count;
+        for (var i = startIndex; i < end; i++)
         {
             if (match.Invoke(list[i])) return i;
         }
@@ -168,7 +163,7 @@ public static class ListFindExtensions
     }
 
     /// <summary>
-    /// 返回列表中符合匹配条件的第一个元素的索引
+    /// 返回列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="match">匹配委托，入参(遍历元素,额外参数)</param>
@@ -181,23 +176,24 @@ public static class ListFindExtensions
         list.FindIndex(0, list.Count, match, args);
 
     /// <summary>
-    /// 返回列表中符合匹配条件的第一个元素的索引
+    /// 返回列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
     /// <param name="match">匹配委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int FindIndex<T, TArgs>(this IReadOnlyList<T> list, int index, int length,
+    public static int FindIndex<T, TArgs>(this IReadOnlyList<T> list, int startIndex, int count,
         [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 }) return -1;
+        if (count <= 0) return -1;
 
-        var end = index + length;
-        for (var i = index; i < end; i++)
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, list.Count);
+        var end = startIndex + count;
+        for (var i = startIndex; i < end; i++)
         {
             if (match.Invoke(list[i], args)) return i;
         }
@@ -206,7 +202,7 @@ public static class ListFindExtensions
     }
 
     /// <summary>
-    /// 从后往前查找列表中符合匹配条件的第一个元素的索引
+    /// 从后往前查找列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="match">匹配委托，入参(遍历元素,额外参数)</param>
@@ -217,7 +213,7 @@ public static class ListFindExtensions
         list.FindLastIndex(list.Count - 1, list.Count, match);
 
     /// <summary>
-    /// 从后往前查找列表中符合匹配条件的第一个元素的索引
+    /// 从后往前查找列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="startIndex">开始索引</param>
@@ -229,7 +225,7 @@ public static class ListFindExtensions
         if (count <= 0) return -1;
 
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, list.Count);
-        ArgumentOutOfRangeHelper.ThrowIfLessThan(startIndex - count + 1, 0);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex - count + 1);
         var num = startIndex - count;
         for (var i = startIndex; i > num; i--)
         {
@@ -240,7 +236,7 @@ public static class ListFindExtensions
     }
 
     /// <summary>
-    /// 从后往前查找列表中符合匹配条件的第一个元素的索引
+    /// 从后往前查找列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="match">匹配委托，入参(遍历元素,额外参数)</param>
@@ -253,7 +249,7 @@ public static class ListFindExtensions
         list.FindLastIndex(list.Count - 1, list.Count, match, args);
 
     /// <summary>
-    /// 从后往前查找列表中符合匹配条件的第一个元素的索引
+    /// 从后往前查找列表中符合条件委托的第一个元素的索引
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="startIndex">开始索引</param>
@@ -267,7 +263,7 @@ public static class ListFindExtensions
         if (count <= 0) return -1;
 
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, list.Count);
-        ArgumentOutOfRangeHelper.ThrowIfLessThan(startIndex - count + 1, 0);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex - count + 1);
         var num = startIndex - count;
         for (var i = startIndex; i > num; i--)
         {
@@ -292,18 +288,20 @@ public static class ListFindExtensions
     /// 返回列表中所有符合条件的索引
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
     /// <param name="match">匹配委托，入参(遍历元素)</param>
     /// <returns>索引序列</returns>
     [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
-    public static IEnumerable<int> FindIndexes<T>(this IReadOnlyList<T> list, int index, int length, Predicate<T> match)
+    public static IEnumerable<int> FindIndexes<T>(this IReadOnlyList<T> list, int startIndex, int count,
+        Predicate<T> match)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 }) yield break;
+        if (count <= 0) yield break;
 
-        var end = index + length;
-        for (var i = index; i < end; i++)
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, list.Count);
+        var end = startIndex + count;
+        for (var i = startIndex; i < end; i++)
         {
             if (match.Invoke(list[i])) yield return i;
         }
@@ -325,20 +323,21 @@ public static class ListFindExtensions
     /// 返回列表中所有符合条件的索引
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="startIndex">起始索引</param>
+    /// <param name="count">查找数量</param>
     /// <param name="match">匹配委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <returns>索引序列</returns>
     [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
-    public static IEnumerable<int> FindIndexes<T, TArgs>(this IReadOnlyList<T> list, int index, int length,
+    public static IEnumerable<int> FindIndexes<T, TArgs>(this IReadOnlyList<T> list, int startIndex, int count,
         Func<T, TArgs, bool> match, TArgs args)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 }) yield break;
+        if (count <= 0) yield break;
 
-        var end = index + length;
-        for (var i = index; i < end; i++)
+        ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, list.Count);
+        var end = startIndex + count;
+        for (var i = startIndex; i < end; i++)
         {
             if (match.Invoke(list[i], args)) yield return i;
         }
@@ -348,7 +347,7 @@ public static class ListFindExtensions
     /// 尝试从列表中找到第一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
@@ -360,22 +359,23 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="count">查找数量</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static bool TryFindFirst<T>(this IReadOnlyList<T> list, int index, int length, Predicate<T> match,
+    public static bool TryFindFirst<T>(this IReadOnlyList<T> list, int index, int count, Predicate<T> match,
         [MaybeNullWhen(false)] out T found)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 })
+        if (count <= 0)
         {
             found = default;
             return false;
         }
 
-        var end = index + length;
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
+        var end = index + count;
         // 不使用foreach，避免装箱
         // ReSharper disable once ForCanBeConvertedToForeach
         for (var i = index; i < end; i++)
@@ -395,7 +395,7 @@ public static class ListFindExtensions
     /// 尝试从列表中找到第一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
@@ -410,23 +410,24 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="count">查找数量</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static bool TryFindFirst<T, TArgs>(this IReadOnlyList<T> list, int index, int length,
+    public static bool TryFindFirst<T, TArgs>(this IReadOnlyList<T> list, int index, int count,
         [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args, [MaybeNullWhen(false)] out T found)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        if (list is not { Count: > 0 })
+        if (count <= 0)
         {
             found = default;
             return false;
         }
 
-        var end = index + length;
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
+        var end = index + count;
         // 不使用foreach，避免装箱
         // ReSharper disable once ForCanBeConvertedToForeach
         for (var i = index; i < end; i++)
@@ -446,7 +447,7 @@ public static class ListFindExtensions
     /// 尝试从列表中从后往前找到一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
@@ -458,13 +459,13 @@ public static class ListFindExtensions
     /// 尝试从列表中从后往前找到一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="startIndex">开始索引</param>
+    /// <param name="index">开始索引</param>
     /// <param name="count">查找数量</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static bool TryFindLast<T>(this IReadOnlyList<T> list, int startIndex, int count, Predicate<T> match,
+    public static bool TryFindLast<T>(this IReadOnlyList<T> list, int index, int count, Predicate<T> match,
         [MaybeNullWhen(false)] out T found)
     {
         if (count <= 0)
@@ -473,10 +474,10 @@ public static class ListFindExtensions
             return false;
         }
 
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, list.Count);
-        ArgumentOutOfRangeHelper.ThrowIfLessThan(startIndex - count + 1, 0);
-        var num = startIndex - count;
-        for (var i = startIndex; i > num; i--)
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, list.Count);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index - count + 1);
+        var num = index - count;
+        for (var i = index; i > num; i--)
         {
             var item = list[i];
             if (!match.Invoke(item)) continue;
@@ -493,7 +494,7 @@ public static class ListFindExtensions
     /// 尝试从列表中从后往前找到一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
@@ -507,14 +508,14 @@ public static class ListFindExtensions
     /// 尝试从列表中从后往前找到一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="startIndex">开始索引</param>
+    /// <param name="index">开始索引</param>
     /// <param name="count">查找数量</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static bool TryFindLast<T, TArgs>(this IReadOnlyList<T> list, int startIndex, int count,
+    public static bool TryFindLast<T, TArgs>(this IReadOnlyList<T> list, int index, int count,
         [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args, [MaybeNullWhen(false)] out T found)
     {
         if (count <= 0)
@@ -523,10 +524,10 @@ public static class ListFindExtensions
             return false;
         }
 
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, list.Count);
-        ArgumentOutOfRangeHelper.ThrowIfLessThan(startIndex - count + 1, 0);
-        var num = startIndex - count;
-        for (var i = startIndex; i > num; i--)
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, list.Count);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index - count + 1);
+        var num = index - count;
+        for (var i = index; i > num; i--)
         {
             var item = list[i];
             if (!match.Invoke(item, args)) continue;
@@ -556,14 +557,14 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="count">查找数量</param>
     /// <param name="value">查找值</param>
     /// <param name="comparison">元素比较表达式</param>
     /// <returns>查找值索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int BinarySearch<T>(this IReadOnlyList<T> list, int index, int length, T value,
-        Comparison<T> comparison) => list.BinarySearch(index, length, value, new ComparisonComparer<T>(comparison));
+    public static int BinarySearch<T>(this IReadOnlyList<T> list, int index, int count, T value,
+        Comparison<T> comparison) => list.BinarySearch(index, count, value, new ComparisonComparer<T>(comparison));
 
     /// <summary>
     /// 二分查找
@@ -582,22 +583,19 @@ public static class ListFindExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">起始索引</param>
-    /// <param name="length">查找长度</param>
+    /// <param name="count">查找数量</param>
     /// <param name="value">查找值</param>
     /// <param name="comparer">元素比较器，默认为null</param>
     /// <returns>查找值索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int BinarySearch<T>(this IReadOnlyList<T> list, int index, int length, T value,
+    public static int BinarySearch<T>(this IReadOnlyList<T> list, int index, int count, T value,
         IComparer<T>? comparer = null)
     {
-        if (index + length > list.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length), length, "The range must less than list count");
-        }
-
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         comparer ??= Comparer<T>.Default;
         var start = index;
-        var end = index + length - 1;
+        var end = index + count - 1;
         while (start <= end)
         {
             var current = start + (end - start >> 1);

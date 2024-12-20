@@ -211,7 +211,7 @@ public static class ListSortExtensions
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        using var temporary = PooledArray.Get<T>(length);
+        using var temporary = PooledArray.Get<T>(length, true);
         MergeSortInternal(list, index, index + length - 1, comparer ?? Comparer<T>.Default, temporary.Span, index);
     }
 
@@ -520,7 +520,7 @@ public static class ListSortExtensions
             InsertionSortInternal(list, i, Math.Min(i + minRunLength - 1, end), comparer);
         }
 
-        using var temp = PooledArray.Get<T>(length, true);
+        using var temporary = PooledArray.Get<T>(length, true);
         for (var size = minRunLength; size < length; size *= 2)
         {
             for (var left = index; left < end; left += size * 2)
@@ -529,7 +529,7 @@ public static class ListSortExtensions
                 var right = Math.Min(left + size * 2 - 1, end);
                 if (mid < right)
                 {
-                    MergeSortMerge(list, left, mid, right, comparer, temp.Span.Slice(left - index, right - left + 1));
+                    MergeSortMerge(list, left, mid, right, comparer, temporary.Slice(left - index, right - left + 1));
                 }
             }
         }
@@ -624,9 +624,7 @@ public static class ListSortExtensions
 
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
-        using var counting = PooledArray.Get<int>(maxValue - minValue + 1);
-        // 池化数组可能有残留数据，数组清零
-        counting.Clear();
+        using var counting = PooledArray.GetCleared<int>(maxValue - minValue + 1, true);
         var end = index + length - 1;
         for (var i = index; i <= end; i++)
         {
@@ -684,7 +682,7 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, list.Count);
         var end = index + length - 1;
         var (mid, negativeMax, positiveMax) = RadixSortPartition(list, index, end);
-        using var temporary = PooledArray.Get<int>(length);
+        using var temporary = PooledArray.Get<int>(length, true);
         // 排序负数部分
         if (mid >= index && mid <= end)
         {

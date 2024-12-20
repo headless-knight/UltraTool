@@ -61,6 +61,16 @@ public static class ArrayExtensions
         => new(array, start, length);
 
     /// <summary>
+    /// 将数组反转到目标跨度
+    /// </summary>
+    /// <param name="array">数组</param>
+    /// <param name="destination">目标跨度</param>
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReverseTo<T>(this T[] array, Span<T> destination) =>
+        new ReadOnlySpan<T>(array).ReverseTo(destination);
+
+    /// <summary>
     /// 将数组内容输出为字符串
     /// </summary>
     /// <param name="array">数组</param>

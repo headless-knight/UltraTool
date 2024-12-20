@@ -213,7 +213,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int LastIndexOf(T item, int startIndex) => LastIndexOf(item, startIndex, Length);
+    public readonly int LastIndexOf(T item, int startIndex) => LastIndexOf(item, startIndex, startIndex + 1);
 
     /// <summary>
     /// 从后往前查找指定元素的索引，若不存在返回-1
@@ -347,7 +347,8 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int FindLastIndex(int startIndex, Predicate<T> match) => FindLastIndex(startIndex, Length, match);
+    public readonly int FindLastIndex(int startIndex, Predicate<T> match) =>
+        FindLastIndex(startIndex, startIndex + 1, match);
 
     /// <summary>
     /// 根据条件从后往前查找元素，返回匹配到的索引，若不存在返回-1
@@ -413,6 +414,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void Add(T item)
     {
         if (Length >= Capacity)
@@ -427,6 +429,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// 批量添加元素
     /// </summary>
     /// <param name="range">元素序列</param>
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void AddRange([InstantHandle] IEnumerable<T> range)
     {
         switch (range)
@@ -468,6 +471,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void Insert(int index, T item)
     {
         if (Length >= Capacity)
@@ -488,7 +492,8 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// 批量插入元素
     /// </summary>
     /// <param name="index">插入索引</param>
-    /// <param name="range">元素序列</param>
+    /// <param name="range">待插入序列</param>
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void InsertRange(int index, [InstantHandle] IEnumerable<T> range)
     {
         if (!range.TryGetNonEnumeratedCount(out var size))
@@ -544,6 +549,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public bool Remove(T item)
     {
         var index = IndexOf(item);
@@ -576,6 +582,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public void RemoveAt(int index)
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
@@ -589,9 +596,11 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.Read)]
     public void CopyTo(T[] array, int arrayIndex) => Array.Copy(GetRawArray(), 0, array, arrayIndex, Length);
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public void Clear()
     {
         if (_array != null)
@@ -606,15 +615,22 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// 获取枚举器
     /// </summary>
     /// <returns>枚举器</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ArraySegment<T>.Enumerator GetEnumerator() => GetArraySegment().GetEnumerator();
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public void Dispose()
     {
         if (_array != null)

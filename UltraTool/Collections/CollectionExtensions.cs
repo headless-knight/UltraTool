@@ -37,12 +37,12 @@ public static class CollectionExtensions
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="value">待添加值</param>
-    /// <param name="predicate">条件委托，入参(待添加值)</param>
+    /// <param name="match">条件委托</param>
     /// <returns>是否满足条件</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
-    public static bool AddIf<T>(this ICollection<T> coll, T value, Func<T, bool> predicate)
+    public static bool AddIf<T>(this ICollection<T> coll, T value, Predicate<T> match)
     {
-        if (!predicate.Invoke(value)) return false;
+        if (!match.Invoke(value)) return false;
 
         coll.Add(value);
         return true;
@@ -53,11 +53,10 @@ public static class CollectionExtensions
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="range">待添加集合</param>
-    /// <param name="predicate">条件委托，入参(待添加值)</param>
+    /// <param name="match">条件委托</param>
     /// <returns>满足添加的数量</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
-    public static int AddRangeIf<T>(this ICollection<T> coll, [InstantHandle] IEnumerable<T> range,
-        Func<T, bool> predicate)
+    public static int AddRangeIf<T>(this ICollection<T> coll, [InstantHandle] IEnumerable<T> range, Predicate<T> match)
     {
         if (range.TryGetNonEnumeratedCount(out var size) && size <= 0)
         {
@@ -69,7 +68,7 @@ public static class CollectionExtensions
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var item in range)
         {
-            if (coll.AddIf(item, predicate)) count++;
+            if (coll.AddIf(item, match)) count++;
         }
 
         return count;
@@ -121,12 +120,12 @@ public static class CollectionExtensions
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="value">待删除值</param>
-    /// <param name="predicate">条件</param>
+    /// <param name="match">条件委托</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool RemoveIf<T>(this ICollection<T> coll, T value, Func<T, bool> predicate) =>
-        predicate.Invoke(value) && coll.Remove(value);
+    public static bool RemoveIf<T>(this ICollection<T> coll, T value, Predicate<T> match) =>
+        match.Invoke(value) && coll.Remove(value);
 
     /// <summary>
     /// 删除<paramref name="range"/>待删除序列所有元素
@@ -160,11 +159,11 @@ public static class CollectionExtensions
     /// </summary>
     /// <param name="coll">集合</param>
     /// <param name="range">待删除序列</param>
-    /// <param name="predicate">条件</param>
+    /// <param name="match">条件委托</param>
     /// <returns>成功删除个数</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public static int RemoveRangeIf<T>(this ICollection<T> coll, [InstantHandle] IEnumerable<T> range,
-        Func<T, bool> predicate)
+        Predicate<T> match)
     {
         if (coll is not { Count: > 0 }) return 0;
 
@@ -178,7 +177,7 @@ public static class CollectionExtensions
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var item in range)
         {
-            if (coll.RemoveIf(item, predicate)) count++;
+            if (coll.RemoveIf(item, match)) count++;
         }
 
         return count;

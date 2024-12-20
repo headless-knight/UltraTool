@@ -120,7 +120,7 @@ public static class ListExtensions
     /// <param name="match">条件委托，入参(元素)</param>
     /// <returns>删除的元素数量</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static int RemoveAll<T>(this IList<T> list, Func<T, bool> match)
+    public static int RemoveAll<T>(this IList<T> list, Predicate<T> match)
     {
         var count = 0;
         for (var i = list.Count - 1; i >= 0; i--)
@@ -165,10 +165,10 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的第一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <returns>是否成功删除</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveFirst<T>([NotNullWhen(true)] this IList<T>? list, Func<T, bool> match)
+    public static bool TryRemoveFirst<T>([NotNullWhen(true)] this IList<T>? list, Predicate<T> match)
     {
         if (list is not { Count: > 0 }) return false;
 
@@ -187,7 +187,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的第一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <returns>是否成功删除</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
@@ -231,7 +231,7 @@ public static class ListExtensions
     /// 尝试删除列表第一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否成功删除</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
@@ -261,7 +261,7 @@ public static class ListExtensions
     /// 尝试删除列表第一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否成功删除</returns>
@@ -319,10 +319,10 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveLast<T>([NotNullWhen(true)] this IList<T>? list, Func<T, bool> match)
+    public static bool TryRemoveLast<T>([NotNullWhen(true)] this IList<T>? list, Predicate<T> match)
     {
         if (list is not { Count: > 0 }) return false;
 
@@ -341,7 +341,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
@@ -385,11 +385,11 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素)</param>
+    /// <param name="match">条件委托，入参(遍历元素)</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveLast<T>([NotNullWhen(true)] this IList<T>? list, Func<T, bool> match,
+    public static bool TryRemoveLast<T>([NotNullWhen(true)] this IList<T>? list, Predicate<T> match,
         [MaybeNullWhen(false)] out T removed)
     {
         if (list is not { Count: > 0 })
@@ -415,7 +415,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">匹配条件，入参(遍历元素,额外参数)</param>
+    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
     /// <param name="args">额外参数</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否删除成功</returns>

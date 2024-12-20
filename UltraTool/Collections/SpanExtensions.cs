@@ -14,6 +14,15 @@ public static class SpanExtensions
     /// <summary>
     /// 反转跨度至指定跨度
     /// </summary>
+    /// <param name="span">源跨度</param>
+    /// <param name="destination">目标跨度</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReverseTo<T>(this Span<T> span, Span<T> destination) =>
+        ReverseTo((ReadOnlySpan<T>)span, destination);
+
+    /// <summary>
+    /// 反转跨度至指定跨度
+    /// </summary>
     /// <param name="source">源跨度</param>
     /// <param name="destination">目标跨度</param>
     public static void ReverseTo<T>(this ReadOnlySpan<T> source, Span<T> destination)

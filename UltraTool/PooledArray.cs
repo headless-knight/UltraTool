@@ -37,6 +37,21 @@ public static class PooledArray
         new(length, pool, clearArray);
 
     /// <summary>
+    /// 获取池化数组，并清空数组内容
+    /// </summary>
+    /// <param name="length">初始长度</param>
+    /// <param name="clearArray">是否归还时清空数组，默认null</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PooledArray<T> GetCleared<T>(int length, bool? clearArray = null)
+    {
+        var array = Get<T>(length, clearArray);
+        array.Clear();
+        return array;
+    }
+
+    /// <summary>
     /// 从指定跨度拷贝数据生成池化数组
     /// </summary>
     /// <param name="span">只读跨度</param>
@@ -303,7 +318,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int LastIndexOf(T item, int startIndex) => LastIndexOf(item, startIndex, Length);
+    public readonly int LastIndexOf(T item, int startIndex) => LastIndexOf(item, startIndex, startIndex + 1);
 
     /// <summary>
     /// 从后往前查找指定元素的索引，若不存在返回-1
@@ -436,7 +451,8 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <returns>索引</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int FindLastIndex(int startIndex, Predicate<T> match) => FindLastIndex(startIndex, Length, match);
+    public readonly int FindLastIndex(int startIndex, Predicate<T> match) =>
+        FindLastIndex(startIndex, startIndex + 1, match);
 
     /// <summary>
     /// 根据条件从后往前查找元素，返回匹配到的索引，若不存在返回-1
@@ -578,12 +594,24 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="array">目标数组</param>
     /// <param name="arrayIndex">目标起始索引</param>
-    /// <param name="length">目标长度</param>
+    /// <param name="length">拷贝长度</param>
     [CollectionAccess(CollectionAccessType.Read)]
-    public readonly void CopyTo(T[] array, int arrayIndex, int length)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly void CopyTo(T[] array, int arrayIndex, int length) => CopyTo(0, array, arrayIndex, length);
+
+    /// <summary>
+    /// 拷贝数据到指定数组
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="array">目标数组</param>
+    /// <param name="arrayIndex">目标起始索引</param>
+    /// <param name="length">拷贝长度</param>
+    [CollectionAccess(CollectionAccessType.Read)]
+    public readonly void CopyTo(int index, T[] array, int arrayIndex, int length)
     {
-        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(arrayIndex + length, Length);
-        Array.Copy(RawArray, 0, array, arrayIndex, length);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(arrayIndex + length, array.Length);
+        Array.Copy(RawArray, index, array, arrayIndex, length);
     }
 
     /// <summary>

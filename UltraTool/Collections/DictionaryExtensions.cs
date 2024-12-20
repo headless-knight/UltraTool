@@ -202,7 +202,6 @@ public static class DictionaryExtensions
     /// <param name="range">待添加键值对序列</param>
     /// <returns>成功添加个数</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int TryAddRange<TKey, TValue>(this IDictionary<TKey, TValue> dict,
         [InstantHandle] IEnumerable<KeyValuePair<TKey, TValue>> range)
     {
@@ -218,6 +217,21 @@ public static class DictionaryExtensions
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// 设置字典键值对，返回旧值，若不存在则返回default(T)
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="value">值</param>
+    /// <returns>旧值</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent | CollectionAccessType.UpdatedContent)]
+    public static TValue? Put<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
+    {
+        dict.TryGetValue(key, out var existed);
+        dict[key] = value;
+        return existed;
     }
 
     /// <summary>
@@ -307,8 +321,7 @@ public static class DictionaryExtensions
     [CollectionAccess(CollectionAccessType.UpdatedContent | CollectionAccessType.ModifyExistingContent)]
     public static TValue AddOrUpdate<TKey, TValue, TArgs>(this IDictionary<TKey, TValue> dict, TKey key,
         [RequireStaticDelegate] Func<TKey, TArgs, TValue> creator, Func<TKey, TValue, TArgs, TValue> updater,
-        TArgs args)
-        where TKey : notnull
+        TArgs args) where TKey : notnull
     {
         // 并发字典调用并发方法
         if (dict is ConcurrentDictionary<TKey, TValue> concurrent)

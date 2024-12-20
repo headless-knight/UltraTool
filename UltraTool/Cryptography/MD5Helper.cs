@@ -58,7 +58,7 @@ public static class MD5Helper
     public static byte[] Compute(ReadOnlySpan<char> source, Encoding? encoding = null)
     {
         encoding ??= Encoding.UTF8;
-        using var bytes = PooledArray.Get<byte>(encoding.GetByteCount(source));
+        using var bytes = PooledArray.Get<byte>(encoding.GetByteCount(source), true);
         encoding.GetBytes(source, bytes.Span);
         return Compute(bytes.ReadOnlySpan);
     }
@@ -73,7 +73,7 @@ public static class MD5Helper
     public static int Compute(ReadOnlySpan<char> source, Span<byte> destination, Encoding? encoding = null)
     {
         encoding ??= Encoding.UTF8;
-        using var bytes = PooledArray.Get<byte>(encoding.GetByteCount(source));
+        using var bytes = PooledArray.Get<byte>(encoding.GetByteCount(source), true);
         encoding.GetBytes(source, bytes.Span);
         return Compute(bytes.ReadOnlySpan, destination);
     }

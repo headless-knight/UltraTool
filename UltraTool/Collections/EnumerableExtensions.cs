@@ -37,7 +37,7 @@ public static class EnumerableExtensions
         source.All(static item => item == null);
 
     /// <summary>
-    /// 判断序列是否有序
+    /// 判断序列是否有序，空序列与单元素序列视为有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparer">比较器，默认为null</param>
@@ -64,7 +64,7 @@ public static class EnumerableExtensions
     }
 
     /// <summary>
-    /// 判断序列是否有序
+    /// 判断序列是否有序，空序列与单元素序列视为有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparison">比较表达式</param>
@@ -75,7 +75,7 @@ public static class EnumerableExtensions
         => source.IsOrdered(new ComparisonComparer<T>(comparison));
 
     /// <summary>
-    /// 判断序列是否降序有序
+    /// 判断序列是否降序有序，空序列与单元素序列视为有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparer">比较器，默认为null</param>
@@ -102,7 +102,7 @@ public static class EnumerableExtensions
     }
 
     /// <summary>
-    /// 判断序列是否降序有序
+    /// 判断序列是否降序有序，空序列与单元素序列视为有序
     /// </summary>
     /// <param name="source">序列</param>
     /// <param name="comparison">比较表达式</param>

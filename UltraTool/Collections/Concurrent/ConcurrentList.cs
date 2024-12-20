@@ -32,6 +32,37 @@ public class ConcurrentList<T> : IList<T>, IReadOnlyList<T>
         }
     }
 
+    /// <summary>
+    /// 容量
+    /// </summary>
+    public int Capacity
+    {
+        get
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _list.Capacity;
+            }
+            finally
+            {
+                if (_lock.IsReadLockHeld) _lock.ExitReadLock();
+            }
+        }
+        set
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _list.Capacity = value;
+            }
+            finally
+            {
+                if (_lock.IsWriteLockHeld) _lock.ExitWriteLock();
+            }
+        }
+    }
+
     /// <inheritdoc />
     bool ICollection<T>.IsReadOnly => false;
 
@@ -249,6 +280,25 @@ public class ConcurrentList<T> : IList<T>, IReadOnlyList<T>
         try
         {
             _list.Insert(index, item);
+        }
+        finally
+        {
+            if (_lock.IsWriteLockHeld) _lock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// 批量插入元素
+    /// </summary>
+    /// <param name="index">插入索引</param>
+    /// <param name="range">待插入序列</param>
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
+    public void InsertRange(int index, [InstantHandle] IEnumerable<T> range)
+    {
+        _lock.EnterWriteLock();
+        try
+        {
+            _list.InsertRange(index, range);
         }
         finally
         {
