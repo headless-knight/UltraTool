@@ -80,7 +80,7 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
     /// 构造方法
     /// </summary>
     /// <param name="collection">初始集合</param>
-    public Deque(IEnumerable<T> collection)
+    public Deque([InstantHandle] IEnumerable<T> collection)
     {
         _items = AllocateArray(collection.GetCountOrZero());
         foreach (var item in collection)
@@ -206,6 +206,11 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
         }
 
         item = _items[_head];
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _items[_head] = default!;
+        }
+
         _head = (_head + 1) % Capacity;
         Count--;
         _version++;
@@ -234,6 +239,11 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
 
         var tail = (_head + Count - 1) % Capacity;
         item = _items[tail];
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _items[tail] = default!;
+        }
+
         Count--;
         _version++;
         return true;
@@ -243,6 +253,11 @@ public class Deque<T> : ICollection<T>, IReadOnlyList<T>
     public void Clear()
     {
         if (Count <= 0) return;
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            Array.Clear(_items, 0, _items.Length);
+        }
 
         _head = Count = 0;
         _version++;

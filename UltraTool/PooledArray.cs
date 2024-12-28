@@ -1,7 +1,6 @@
 ﻿using System.Buffers;
 using System.Collections;
 using System.Runtime.CompilerServices;
-using System.Text;
 using JetBrains.Annotations;
 using UltraTool.Collections;
 using UltraTool.Helpers;
@@ -180,6 +179,11 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly T[] RawArray => _array.EmptyIfNull();
 
     /// <summary>
+    /// 可枚举对象
+    /// </summary>
+    public readonly IEnumerable<T> Enumerable => RawArray.Take(Length);
+
+    /// <summary>
     /// 跨度
     /// </summary>
     public readonly Span<T> Span => new(_array, 0, Length);
@@ -265,6 +269,20 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         Length = length;
         _pool = pool;
         _clearArray = clearArray ?? RuntimeHelpers.IsReferenceOrContainsReferences<T>();
+    }
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="action">遍历操作，入参(元素)</param>
+    public void ForEach(Action<T> action)
+    {
+        if (_array is not { Length: > 0 }) return;
+
+        for (var i = 0; i < Length; i++)
+        {
+            action.Invoke(_array[i]);
+        }
     }
 
     /// <inheritdoc />
@@ -517,6 +535,31 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         return new Span<T>(RawArray, start, length);
     }
 
+    /// <summary>
+    /// 获取指定范围的内容至新分配池化数组
+    /// </summary>
+    /// <param name="start">起始索引</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly PooledArray<T> GetRange(int start) => GetRange(start, Length - start);
+
+    /// <summary>
+    /// 获取指定范围的内容至新分配池化数组
+    /// </summary>
+    /// <param name="start">起始索引</param>
+    /// <param name="length">长度</param>
+    /// <returns>池化数组</returns>
+    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    public readonly PooledArray<T> GetRange(int start, int length)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(start + length, Length);
+        var result = new PooledArray<T>(length);
+        var source = new ReadOnlySpan<T>(_array, start, length);
+        source.CopyTo(result.Span);
+        return result;
+    }
+
     /// <inheritdoc />
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -631,24 +674,8 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <returns>字符串</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public readonly string DumpAsString()
-    {
-        var sb = new StringBuilder();
-        sb.Append("{ ");
-        foreach (var item in this)
-        {
-            sb.Append(item);
-            sb.Append(", ");
-        }
-
-        if (Length > 0)
-        {
-            sb.Length -= 2;
-        }
-
-        sb.Append(" }");
-        return sb.ToString();
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly string DumpAsString() => ReadOnlySpan.DumpAsString();
 
     /// <inheritdoc cref="IEnumerable{T}.GetEnumerator" />
     [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]

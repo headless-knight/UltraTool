@@ -769,7 +769,7 @@ public static class ListSortExtensions
         }
     }
 
-    /// <summary>基数排序，轮次操作</summary>
+    /// <summary>基数排序，单轮操作</summary>
     private static void RadixSortRound(IList<int> list, int start, int end, int exp, Span<int> temporary)
     {
         Span<int> counting = stackalloc int[10];

@@ -123,6 +123,14 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly T[] GetRawArray() => _array.EmptyIfNull();
 
     /// <summary>
+    /// 获取可枚举对象
+    /// </summary>
+    /// <returns>可枚举对象</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly IEnumerable<T> GetEnumerable() => GetRawArray().Take(Length);
+
+    /// <summary>
     /// 获取跨度
     /// </summary>
     /// <returns>跨度</returns>
@@ -161,6 +169,20 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly ArraySegment<T> GetArraySegment() => new(GetRawArray(), 0, Length);
+
+    /// <summary>
+    /// 遍历序列
+    /// </summary>
+    /// <param name="action">遍历操作，入参(元素)</param>
+    public void ForEach(Action<T> action)
+    {
+        if (_array is not { Length: > 0 }) return;
+
+        for (var i = 0; i < Length; i++)
+        {
+            action.Invoke(_array[i]);
+        }
+    }
 
     /// <inheritdoc />
     [Pure, CollectionAccess(CollectionAccessType.Read)]
@@ -406,11 +428,34 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="length">长度</param>
     /// <returns>跨度</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Span<T> Slice(int start, int length)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(start + length, Length);
         return new Span<T>(GetRawArray(), start, length);
+    }
+
+    /// <summary>
+    /// 获取指定范围的内容至新分配池化动态数组
+    /// </summary>
+    /// <param name="start">起始索引</param>
+    /// <returns>池化动态数组</returns>
+    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly PooledDynamicArray<T> GetRange(int start) => GetRange(start, Length - start);
+
+    /// <summary>
+    /// 获取指定范围的内容至新分配池化动态数组
+    /// </summary>
+    /// <param name="start">起始索引</param>
+    /// <param name="length">长度</param>
+    /// <returns>池化动态数组</returns>
+    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    public readonly PooledDynamicArray<T> GetRange(int start, int length)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(start + length, Length);
+        var result = new PooledDynamicArray<T>(length);
+        result.AddRange(GetReadOnlySpan());
+        return result;
     }
 
     /// <inheritdoc />
@@ -428,7 +473,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <summary>
     /// 批量添加元素
     /// </summary>
-    /// <param name="range">元素序列</param>
+    /// <param name="range">待添加序列</param>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void AddRange([InstantHandle] IEnumerable<T> range)
     {
@@ -436,9 +481,7 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         {
             case T[] array:
             {
-                EnsureCapacity(Length + array.Length);
-                Array.Copy(array, 0, _array!, Length, array.Length);
-                Length += array.Length;
+                AddRange(array);
                 return;
             }
             case ICollection<T> coll:
@@ -468,6 +511,27 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// 批量添加元素
+    /// </summary>
+    /// <param name="range">待添加数组</param>
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AddRange(T[] range) => AddRange(new ReadOnlySpan<T>(range));
+
+    /// <summary>
+    /// 批量添加元素
+    /// </summary>
+    /// <param name="range">待添加跨度</param>
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
+    public void AddRange(ReadOnlySpan<T> range)
+    {
+        EnsureCapacity(Length + range.Length);
+        var destination = new Span<T>(_array, Length, range.Length);
+        range.CopyTo(destination);
+        Length += range.Length;
     }
 
     /// <inheritdoc />
@@ -560,6 +624,21 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <summary>
+    /// 删除指定范围的元素
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="count">删除数量</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public void RemoveRange(int index, int count)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, Length);
+        var array = GetRawArray();
+        Array.Copy(array, index + count, array, index, Length - index - count);
+        Array.Clear(array, Length - count, count);
+        Length -= count;
+    }
+
+    /// <summary>
     /// 删除列表中所有满足条件的元素
     /// </summary>
     /// <param name="match">条件委托</param>
@@ -596,10 +675,6 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     }
 
     /// <inheritdoc />
-    [CollectionAccess(CollectionAccessType.Read)]
-    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(GetRawArray(), 0, array, arrayIndex, Length);
-
-    /// <inheritdoc />
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public void Clear()
     {
@@ -610,6 +685,38 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
 
         Length = 0;
     }
+
+    /// <inheritdoc />
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(GetRawArray(), 0, array, arrayIndex, Length);
+
+    /// <summary>
+    /// 反转数组内容
+    /// </summary>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Reverse() => Array.Reverse(GetRawArray(), 0, Length);
+
+    /// <summary>
+    /// 反转指定范围数组内容
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">反转长度</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public void Reverse(int index, int length)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
+        Array.Reverse(GetRawArray(), index, length);
+    }
+
+    /// <summary>
+    /// 将池化数组内容格式化为字符串
+    /// </summary>
+    /// <returns>字符串</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly string DumpAsString() => GetReadOnlySpan().DumpAsString();
 
     /// <summary>
     /// 获取枚举器
