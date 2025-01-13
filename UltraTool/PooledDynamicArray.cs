@@ -30,6 +30,11 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     public readonly int Capacity => _array?.Length ?? 0;
 
+    /// <summary>
+    /// 是否为空
+    /// </summary>
+    public readonly bool IsEmpty => Length <= 0;
+
     /// <inheritdoc />
     readonly bool ICollection<T>.IsReadOnly => false;
 
@@ -45,12 +50,14 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         readonly get
         {
+            ArgumentOutOfRangeHelper.ThrowIfNegative(index);
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
             return _array![index];
         }
         [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
         set
         {
+            ArgumentOutOfRangeHelper.ThrowIfNegative(index);
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
             _array![index] = value;
         }
@@ -171,10 +178,10 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public readonly ArraySegment<T> GetArraySegment() => new(GetRawArray(), 0, Length);
 
     /// <summary>
-    /// 遍历序列
+    /// 遍历数组
     /// </summary>
     /// <param name="action">遍历操作，入参(元素)</param>
-    public void ForEach(Action<T> action)
+    public readonly void ForEach(Action<T> action)
     {
         if (_array is not { Length: > 0 }) return;
 
@@ -259,12 +266,11 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public readonly T? Find(Predicate<T> match)
     {
-        if (Length <= 0) return default;
+        if (_array is not { Length: > 0 }) return default;
 
-        var array = GetRawArray();
         for (var i = 0; i < Length; i++)
         {
-            var item = array[i];
+            var item = _array[i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -281,12 +287,11 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public readonly T? FindLast(Predicate<T> match)
     {
-        if (Length <= 0) return default;
+        if (_array is not { Length: > 0 }) return default;
 
-        var array = GetRawArray();
         for (var i = Length - 1; i >= 0; i--)
         {
-            var item = array[i];
+            var item = _array[i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -304,11 +309,12 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly List<T> FindAll(Predicate<T> match)
     {
+        if (_array is not { Length: > 0 }) return [];
+
         var list = new List<T>();
-        var array = GetRawArray();
         for (var i = 0; i < Length; i++)
         {
-            var item = array[i];
+            var item = _array[i];
             if (!match.Invoke(item)) continue;
 
             list.Add(item);
@@ -462,12 +468,8 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void Add(T item)
     {
-        if (Length >= Capacity)
-        {
-            EnsureCapacity(Length + 1);
-        }
-
-        _array![Length++] = item;
+        EnsureCapacity(Length + 1);
+        GetRawArray()[Length++] = item;
     }
 
     /// <summary>
@@ -487,16 +489,17 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
             case ICollection<T> coll:
             {
                 EnsureCapacity(Length + coll.Count);
-                coll.CopyTo(_array!, Length);
+                coll.CopyTo(GetRawArray(), Length);
                 Length += coll.Count;
                 return;
             }
             case IReadOnlyCollection<T> coll:
             {
                 EnsureCapacity(Length + coll.Count);
+                var array = GetRawArray();
                 foreach (var item in coll)
                 {
-                    _array![Length++] = item;
+                    array[Length++] = item;
                 }
 
                 return;
@@ -538,17 +541,14 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public void Insert(int index, T item)
     {
-        if (Length >= Capacity)
-        {
-            EnsureCapacity(Length + 1);
-        }
-
+        EnsureCapacity(Length + 1);
+        var array = GetRawArray();
         for (var i = Length - 1; i >= index; i--)
         {
-            _array![i + 1] = _array![i];
+            array[i + 1] = array[i];
         }
 
-        _array![index] = item;
+        array[index] = item;
         Length++;
     }
 
@@ -571,14 +571,15 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         }
 
         EnsureCapacity(Length + size);
+        var array = GetRawArray();
         for (var i = Length - 1; i >= index; i--)
         {
-            _array![i + size] = _array![i];
+            array[i + size] = array[i];
         }
 
         foreach (var item in range)
         {
-            _array![index++] = item;
+            array[index++] = item;
         }
 
         Length += size;
@@ -599,9 +600,9 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         }
 
         var newArray = _pool.Rent(newCapacity);
-        if (Length > 0)
+        if (!IsEmpty)
         {
-            Array.Copy(_array!, newArray, Length);
+            Array.Copy(GetRawArray(), newArray, Length);
         }
 
         if (_array != null)
@@ -634,7 +635,11 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, Length);
         var array = GetRawArray();
         Array.Copy(array, index + count, array, index, Length - index - count);
-        Array.Clear(array, Length - count, count);
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            Array.Clear(array, Length - count, count);
+        }
+
         Length -= count;
     }
 
@@ -666,21 +671,27 @@ public struct PooledDynamicArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
+        var array = GetRawArray();
         for (var i = index + 1; i < Length; i++)
         {
-            _array![i - 1] = _array![i];
+            array[i - 1] = array[i];
         }
 
-        _array![Length--] = default!;
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            array[Length - 1] = default!;
+        }
+
+        Length--;
     }
 
     /// <inheritdoc />
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public void Clear()
     {
-        if (_array != null)
+        if (!IsEmpty && RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            Array.Clear(_array, 0, Length);
+            Array.Clear(GetRawArray(), 0, Length);
         }
 
         Length = 0;

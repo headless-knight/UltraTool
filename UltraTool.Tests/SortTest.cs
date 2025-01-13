@@ -88,30 +88,4 @@ public class SortTest
         list.TimSort();
         Assert.True(list.IsOrdered());
     }
-
-    [Fact]
-    public void CountingSortTest()
-    {
-        var list = new List<int>(500);
-        for (var i = 0; i < 500; i++)
-        {
-            list.Add(Random.Shared.Next(-100, 100));
-        }
-
-        list.CountingSort();
-        Assert.True(list.IsOrdered());
-    }
-
-    [Fact]
-    public void RadixSortTest()
-    {
-        var list = new List<int>(21);
-        for (var i = 0; i < 21; i++)
-        {
-            list.Add(Random.Shared.Next(-100, 100));
-        }
-
-        list.RadixSort();
-        Assert.True(list.IsOrdered());
-    }
 }

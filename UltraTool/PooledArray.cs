@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using UltraTool.Collections;
+using UltraTool.Compares;
 using UltraTool.Helpers;
 
 namespace UltraTool;
@@ -150,6 +151,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     private readonly ArrayPool<T> _pool;
     private readonly bool _clearArray;
     private T[]? _array;
+    private int _length;
 
     /// <summary>
     /// 空池化数组
@@ -162,7 +164,32 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <summary>
     /// 有效长度
     /// </summary>
-    public int Length { get; }
+    public int Length
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        readonly get => _length;
+        set
+        {
+            ArgumentOutOfRangeHelper.ThrowIfNegative(value);
+            ArgumentOutOfRangeHelper.ThrowIfGreaterThan(value, Capacity);
+            if (!IsEmpty && value < _length && RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                Array.Clear(RawArray, value, _length - value);
+            }
+
+            _length = value;
+        }
+    }
+
+    /// <summary>
+    /// 容量
+    /// </summary>
+    public readonly int Capacity => _array?.Length ?? 0;
+
+    /// <summary>
+    /// 是否为空
+    /// </summary>
+    public readonly bool IsEmpty => Length <= 0;
 
     /// <inheritdoc />
     readonly bool ICollection<T>.IsReadOnly => false;
@@ -219,12 +246,14 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         [Pure, CollectionAccess(CollectionAccessType.Read)]
         get
         {
+            ArgumentOutOfRangeHelper.ThrowIfNegative(index);
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
             return _array![index];
         }
         [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
         set
         {
+            ArgumentOutOfRangeHelper.ThrowIfNegative(index);
             ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index, Length);
             _array![index] = value;
         }
@@ -247,12 +276,9 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="pool">数组池</param>
     /// <param name="clearArray">是否释放时清空数组</param>
     /// <remarks>若clearArray值为null则根据元素类型判断，为引用类型则等同于true，否则等同于false</remarks>
-    public PooledArray(int length, ArrayPool<T> pool, bool? clearArray)
+    public PooledArray(int length, ArrayPool<T> pool, bool? clearArray) :
+        this(pool.Rent(length), length, pool, clearArray)
     {
-        _array = pool.Rent(length);
-        Length = length;
-        _pool = pool;
-        _clearArray = clearArray ?? RuntimeHelpers.IsReferenceOrContainsReferences<T>();
     }
 
     /// <summary>
@@ -266,16 +292,16 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     public PooledArray(T[] array, int length, ArrayPool<T> pool, bool? clearArray)
     {
         _array = array;
-        Length = length;
+        _length = length;
         _pool = pool;
         _clearArray = clearArray ?? RuntimeHelpers.IsReferenceOrContainsReferences<T>();
     }
 
     /// <summary>
-    /// 遍历序列
+    /// 遍历数组
     /// </summary>
     /// <param name="action">遍历操作，入参(元素)</param>
-    public void ForEach(Action<T> action)
+    public readonly void ForEach(Action<T> action)
     {
         if (_array is not { Length: > 0 }) return;
 
@@ -360,12 +386,11 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public readonly T? Find(Predicate<T> match)
     {
-        if (Length <= 0) return default;
+        if (_array is not { Length: > 0 }) return default;
 
-        var array = RawArray;
         for (var i = 0; i < Length; i++)
         {
-            var item = array[i];
+            var item = _array[i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -382,12 +407,11 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public readonly T? FindLast(Predicate<T> match)
     {
-        if (Length <= 0) return default;
+        if (_array is not { Length: > 0 }) return default;
 
-        var array = RawArray;
         for (var i = Length - 1; i >= 0; i--)
         {
-            var item = array[i];
+            var item = _array[i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -485,6 +509,30 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
         return Array.FindLastIndex(RawArray, startIndex, count, match);
     }
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="comparison">比较表达式</param>
+    /// <returns>索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int BinarySearch(T value, Comparison<T> comparison) =>
+        BinarySearch(value, new ComparisonComparer<T>(comparison));
+
+    /// <summary>
+    /// 二分查找
+    /// </summary>
+    /// <param name="index">起始索引</param>
+    /// <param name="length">查找长度</param>
+    /// <param name="value">值</param>
+    /// <param name="comparison">比较表达式</param>
+    /// <returns>查找结果索引</returns>
+    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly int BinarySearch(int index, int length, T value, Comparison<T> comparison) =>
+        BinarySearch(index, length, value, new ComparisonComparer<T>(comparison));
 
     /// <summary>
     /// 二分查找
@@ -614,6 +662,8 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public readonly void Swap(int index1, int index2)
     {
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index1);
+        ArgumentOutOfRangeHelper.ThrowIfNegative(index2);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index1, Length);
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(index2, Length);
         (_array![index1], _array![index2]) = (_array![index2], _array![index1]);
@@ -664,6 +714,8 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     public readonly T[] ToArray()
     {
+        if (IsEmpty) return [];
+
         var array = ArrayHelper.AllocateUninitializedArray<T>(Length);
         Array.Copy(RawArray, 0, array, 0, Length);
         return array;
