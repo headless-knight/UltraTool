@@ -23,12 +23,16 @@ public static class CryptoHelper
         aes.Mode = CipherMode.ECB;
         aes.Key = key;
         aes.Padding = padding;
+#if NET6_0_OR_GREATER
+        return aes.EncryptEcb(plaintext, padding);
+#else
         using var encryptor = aes.CreateEncryptor();
         using var stream = new MemoryStream();
         using var cryptoStream = new CryptoStream(stream, encryptor, CryptoStreamMode.Write);
         cryptoStream.Write(plaintext);
         cryptoStream.FlushFinalBlock();
         return stream.ToArray();
+#endif
     }
 
     /// <summary>
@@ -47,12 +51,16 @@ public static class CryptoHelper
         aes.Key = key;
         aes.IV = iv;
         aes.Padding = padding;
+#if NET6_0_OR_GREATER
+        return aes.EncryptCbc(plaintext, iv, padding);
+#else
         using var transform = aes.CreateEncryptor();
         using var stream = new MemoryStream();
         using var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write);
         cryptoStream.Write(plaintext);
         cryptoStream.FlushFinalBlock();
         return stream.ToArray();
+#endif
     }
 
     /// <summary>
@@ -69,12 +77,16 @@ public static class CryptoHelper
         aes.Mode = CipherMode.ECB;
         aes.Key = key;
         aes.Padding = padding;
+#if NET6_0_OR_GREATER
+        return aes.DecryptEcb(ciphertext, padding);
+#else
         using var transform = aes.CreateDecryptor();
         using var stream = new MemoryStream();
         using var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write);
         cryptoStream.Write(ciphertext);
         cryptoStream.FlushFinalBlock();
         return stream.ToArray();
+#endif
     }
 
     /// <summary>
@@ -93,11 +105,15 @@ public static class CryptoHelper
         aes.Key = key;
         aes.IV = iv;
         aes.Padding = padding;
+#if NET6_0_OR_GREATER
+        return aes.DecryptCbc(ciphertext, iv, padding);
+#else
         using var transform = aes.CreateDecryptor();
         using var stream = new MemoryStream();
         using var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write);
         cryptoStream.Write(ciphertext);
         cryptoStream.FlushFinalBlock();
         return stream.ToArray();
+#endif
     }
 }
