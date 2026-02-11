@@ -51,7 +51,7 @@ public struct ValueStopwatch
     /// <summary>
     /// 持续毫秒数
     /// </summary>
-    public readonly long ElapsedMilliseconds => ElapsedTicks / 10000L;
+    public readonly long ElapsedMilliseconds => ElapsedTicks / TimeSpan.TicksPerMillisecond;
 
     /// <summary>
     /// 构造方法

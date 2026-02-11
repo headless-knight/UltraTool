@@ -422,7 +422,7 @@ public static class ListSortExtensions
         {
             var largest = index;
             var leftChild = ((index - offset) << 1) + 1 + offset;
-            var rightChild = ((index - offset) << 1) + 2 + offset;
+            var rightChild = leftChild + 1;
             if (leftChild < count + offset && comparer.Compare(list[leftChild], list[largest]) > 0)
             {
                 largest = leftChild;
@@ -573,7 +573,7 @@ public static class ListSortExtensions
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void TimSort<T>(this IList<T> list, IComparer<T>? comparer = null) =>
-        TimSort(list, 0, list.Count, comparer);
+        list.TimSort(0, list.Count, comparer);
 
     /// <summary>
     /// Tim排序

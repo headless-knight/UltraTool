@@ -535,7 +535,7 @@ public static class ListFindExtensions
     }
 
     /// <summary>二分查找，内部实现</summary>
-    private static int BinarySearchInternal<T, TList, TComparer>(this TList list, int index, int count, T value,
+    private static int BinarySearchInternal<T, TList, TComparer>(TList list, int index, int count, T value,
         TComparer comparer) where TList : IReadOnlyList<T> where TComparer : IComparer<T>
     {
         var left = index;
