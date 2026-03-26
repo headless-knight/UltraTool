@@ -9,7 +9,6 @@ namespace UltraTool.Collections;
 /// <summary>
 /// 列表拓展类
 /// </summary>
-[PublicAPI]
 public static class ListExtensions
 {
     /// <summary>
@@ -17,7 +16,7 @@ public static class ListExtensions
     /// </summary>
     /// <param name="list">列表</param>
     /// <returns>原列表或空列表</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<T> EmptyIfNull<T>(this IReadOnlyList<T>? list) =>
         list ?? Array.Empty<T>();
@@ -28,7 +27,7 @@ public static class ListExtensions
     /// <param name="list">列表</param>
     /// <param name="index">索引</param>
     /// <returns>索引是否合法</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValidIndex<T>(this IReadOnlyList<T> list, int index) =>
         index >= 0 && index < list.Count;
@@ -39,7 +38,7 @@ public static class ListExtensions
     /// <param name="list">列表</param>
     /// <param name="index">索引</param>
     /// <returns>索引是否非法</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsInvalidIndex<T>(this IReadOnlyList<T> list, int index) =>
         index < 0 || index >= list.Count;
@@ -51,17 +50,11 @@ public static class ListExtensions
     /// <param name="index">索引</param>
     /// <param name="value">值</param>
     /// <returns>是否成功获取</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static bool TryGetValue<T>([NotNullWhen(true)] this IReadOnlyList<T>? list, int index,
         [MaybeNullWhen(false)] out T value)
     {
-        if (list is not { Count: > 0 })
-        {
-            value = default;
-            return false;
-        }
-
-        if (list.IsInvalidIndex(index))
+        if (list is not { Count: > 0 } || list.IsInvalidIndex(index))
         {
             value = default;
             return false;
@@ -72,12 +65,12 @@ public static class ListExtensions
     }
 
     /// <summary>
-    /// 获取指定索引值，不存在则返回默认值
+    /// 获取指定索引值，不存在则返回类型默认值
     /// </summary>
     /// <param name="list">列表</param>
     /// <param name="index">索引</param>
-    /// <returns>索引值或默认值</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    /// <returns>索引值</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T? GetValueOrDefault<T>(this IReadOnlyList<T> list, int index) =>
         list.TryGetValue(index, out var got) ? got : default;
@@ -88,11 +81,51 @@ public static class ListExtensions
     /// <param name="list">列表</param>
     /// <param name="index">索引</param>
     /// <param name="defaultValue">默认值</param>
-    /// <returns>获取值或默认值</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    /// <returns>索引值</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T GetValueOrDefault<T>(this IReadOnlyList<T> list, int index, T defaultValue) =>
-        list.TryGetValue(index, out var got) ? got : defaultValue;
+    public static T GetValueOrDefault<T, TList>(this TList list, int index, T defaultValue)
+        where TList : IReadOnlyList<T> => list.TryGetValue(index, out var got) ? got : defaultValue;
+
+    /// <summary>
+    /// 获取指定索引值，超出范围返回最接近该索引位置的值，若列表为空则返回类型默认值
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index">索引</param>
+    /// <returns>索引值</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    public static T? GetNearestOrDefault<T>(this IReadOnlyList<T> list, int index)
+    {
+        // 列表为空，返回默认值
+        if (list is not { Count: > 0 }) return default;
+
+        // 索引小于0，返回第一个元素
+        if (index < 0) return list[0];
+
+        // 索引大于等于列表长度，返回最后一个元素，否则返回指定索引位置的元素
+        return index >= list.Count ? list[^1] : list[index];
+    }
+
+    /// <summary>
+    /// 获取指定索引值，超出范围返回最接近该索引位置的值，若列表为空则返回默认值
+    /// </summary>
+    /// <param name="list">列表</param>
+    /// <param name="index">索引</param>
+    /// <param name="defaultValue">默认值</param>
+    /// <returns>索引值</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    public static T GetNearestOrDefault<T, TList>(this TList list, int index, T defaultValue)
+        where TList : IReadOnlyList<T>
+    {
+        // 列表为空，返回默认值
+        if (list is not { Count: > 0 }) return defaultValue;
+
+        // 索引小于0，返回第一个元素
+        if (index < 0) return list[0];
+
+        // 索引大于等于列表长度，返回最后一个元素，否则返回指定索引位置的元素
+        return index >= list.Count ? list[^1] : list[index];
+    }
 
     /// <summary>
     /// 批量添加元素
@@ -111,27 +144,6 @@ public static class ListExtensions
         {
             list.Add(item);
         }
-    }
-
-    /// <summary>
-    /// 删除列表中所有满足条件的元素
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(元素)</param>
-    /// <returns>删除的元素数量</returns>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static int RemoveAll<T>(this IList<T> list, Predicate<T> match)
-    {
-        var count = 0;
-        for (var i = list.Count - 1; i >= 0; i--)
-        {
-            if (!match.Invoke(list[i])) continue;
-
-            list.RemoveAt(i);
-            count++;
-        }
-
-        return count;
     }
 
     /// <summary>
@@ -165,7 +177,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的第一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素)</param>
+    /// <param name="match">条件委托</param>
     /// <returns>是否成功删除</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public static bool TryRemoveFirst<T>([NotNullWhen(true)] this IList<T>? list, Predicate<T> match)
@@ -175,30 +187,6 @@ public static class ListExtensions
         for (var i = 0; i < list.Count; i++)
         {
             if (!match.Invoke(list[i])) continue;
-
-            list.RemoveAt(i);
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// 尝试删除列表中匹配到的第一个元素
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
-    /// <param name="args">额外参数</param>
-    /// <returns>是否成功删除</returns>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveFirst<T, TArgs>([NotNullWhen(true)] this IList<T>? list,
-        [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args)
-    {
-        if (list is not { Count: > 0 }) return false;
-
-        for (var i = 0; i < list.Count; i++)
-        {
-            if (!match.Invoke(list[i], args)) continue;
 
             list.RemoveAt(i);
             return true;
@@ -231,7 +219,7 @@ public static class ListExtensions
     /// 尝试删除列表第一个满足条件的元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素)</param>
+    /// <param name="match">条件委托</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否成功删除</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
@@ -247,37 +235,6 @@ public static class ListExtensions
         for (var i = 0; i < list.Count; i++)
         {
             if (!match.Invoke(list[i])) continue;
-
-            removed = list[i];
-            list.RemoveAt(i);
-            return true;
-        }
-
-        removed = default;
-        return false;
-    }
-
-    /// <summary>
-    /// 尝试删除列表第一个满足条件的元素
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
-    /// <param name="args">额外参数</param>
-    /// <param name="removed">删除的元素</param>
-    /// <returns>是否成功删除</returns>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveFirst<T, TArgs>([NotNullWhen(true)] this IList<T>? list,
-        [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args, [MaybeNullWhen(false)] out T removed)
-    {
-        if (list is not { Count: > 0 })
-        {
-            removed = default;
-            return false;
-        }
-
-        for (var i = 0; i < list.Count; i++)
-        {
-            if (!match.Invoke(list[i], args)) continue;
 
             removed = list[i];
             list.RemoveAt(i);
@@ -319,7 +276,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素)</param>
+    /// <param name="match">条件委托</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public static bool TryRemoveLast<T>([NotNullWhen(true)] this IList<T>? list, Predicate<T> match)
@@ -329,30 +286,6 @@ public static class ListExtensions
         for (var i = list.Count - 1; i >= 0; i--)
         {
             if (!match.Invoke(list[i])) continue;
-
-            list.RemoveAt(i);
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// 尝试删除列表中匹配到的最后一个元素
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
-    /// <param name="args">额外参数</param>
-    /// <returns>是否删除成功</returns>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveLast<T, TArgs>([NotNullWhen(true)] this IList<T>? list,
-        [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args)
-    {
-        if (list is not { Count: > 0 }) return false;
-
-        for (var i = list.Count - 1; i >= 0; i--)
-        {
-            if (!match.Invoke(list[i], args)) continue;
 
             list.RemoveAt(i);
             return true;
@@ -385,7 +318,7 @@ public static class ListExtensions
     /// 尝试删除列表中匹配到的最后一个元素
     /// </summary>
     /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素)</param>
+    /// <param name="match">条件委托</param>
     /// <param name="removed">删除的元素</param>
     /// <returns>是否删除成功</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
@@ -412,37 +345,6 @@ public static class ListExtensions
     }
 
     /// <summary>
-    /// 尝试删除列表中匹配到的最后一个元素
-    /// </summary>
-    /// <param name="list">列表</param>
-    /// <param name="match">条件委托，入参(遍历元素,额外参数)</param>
-    /// <param name="args">额外参数</param>
-    /// <param name="removed">删除的元素</param>
-    /// <returns>是否删除成功</returns>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static bool TryRemoveLast<T, TArgs>([NotNullWhen(true)] this IList<T>? list,
-        [RequireStaticDelegate] Func<T, TArgs, bool> match, TArgs args, [MaybeNullWhen(false)] out T removed)
-    {
-        if (list is not { Count: > 0 })
-        {
-            removed = default;
-            return false;
-        }
-
-        for (var i = list.Count - 1; i >= 0; i--)
-        {
-            if (!match.Invoke(list[i], args)) continue;
-
-            removed = list[i];
-            list.RemoveAt(i);
-            return true;
-        }
-
-        removed = default;
-        return false;
-    }
-
-    /// <summary>
     /// 交换两个索引位置的数据
     /// </summary>
     /// <param name="list">列表</param>
@@ -450,7 +352,7 @@ public static class ListExtensions
     /// <param name="index2">索引2</param>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Swap<T>(this IList<T> list, int index1, int index2) =>
+    public static void Swap<T>(this IList<T> list, [NonNegativeValue] int index1, [NonNegativeValue] int index2) =>
         (list[index1], list[index2]) = (list[index2], list[index1]);
 
     /// <summary>
@@ -466,10 +368,28 @@ public static class ListExtensions
     /// </summary>
     /// <param name="list">只读列表</param>
     /// <returns>非只读列表</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<T> AsReadOnly<T>(this IList<T> list) =>
         list as IReadOnlyList<T> ?? new ReadOnlyListBridge<T>(list);
+
+    /// <summary>
+    /// 将一个列表接口类型转换为数组，若非数组则拷贝为数组
+    /// </summary>
+    /// <param name="list">列表接口实例</param>
+    /// <returns>数组</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] AsOrToArray<T>(this IList<T> list) => list as T[] ?? list.ToArray();
+
+    /// <summary>
+    /// 将一个列表接口类型转换为列表，若非列表则拷贝为列表
+    /// </summary>
+    /// <param name="list">列表接口实例</param>
+    /// <returns>列表</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<T> AsOrToList<T>(this IList<T> list) => list as List<T> ?? list.ToList();
 
     /// <summary>只读列表桥接</summary>
     private sealed class ReadOnlyListBridge<T>(IList<T> list) : IReadOnlyList<T>
@@ -481,12 +401,12 @@ public static class ListExtensions
         public T this[int index] => list[index];
 
         /// <inheritdoc />
-        [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+        [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerator<T> GetEnumerator() => list.GetEnumerator();
 
         /// <inheritdoc />
-        [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+        [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

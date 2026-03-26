@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
@@ -11,7 +10,6 @@ namespace UltraTool.Collections;
 /// <summary>
 /// 字典拓展类
 /// </summary>
-[PublicAPI]
 public static class DictionaryExtensions
 {
     /// <summary>
@@ -23,21 +21,7 @@ public static class DictionaryExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyDictionary<TKey, TValue> EmptyIfNull<TKey, TValue>(
         this IReadOnlyDictionary<TKey, TValue>? dict) where TKey : notnull =>
-        dict ?? ImmutableDictionary<TKey, TValue>.Empty;
-
-    /// <summary>
-    /// 将字典中所有键填充为指定值
-    /// </summary>
-    /// <param name="dict">字典</param>
-    /// <param name="value">值</param>
-    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
-    public static void Fill<TKey, TValue>(this IDictionary<TKey, TValue> dict, TValue value)
-    {
-        foreach (var key in dict.Keys)
-        {
-            dict[key] = value;
-        }
-    }
+        dict ?? ReadOnlyDictionaryBridge<TKey, TValue>.Empty;
 
     /// <summary>
     /// 获取指定键对应值，不存在则添加并返回缺省值
@@ -202,6 +186,7 @@ public static class DictionaryExtensions
     /// <param name="range">待添加键值对序列</param>
     /// <returns>成功添加个数</returns>
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int TryAddRange<TKey, TValue>(this IDictionary<TKey, TValue> dict,
         [InstantHandle] IEnumerable<KeyValuePair<TKey, TValue>> range)
     {
@@ -393,25 +378,7 @@ public static class DictionaryExtensions
     /// <returns>成功删除数量</returns>
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     public static int RemoveKeys<TKey, TValue>(this IDictionary<TKey, TValue> dict,
-        [InstantHandle] IEnumerable<TKey> keys)
-    {
-        if (dict is not { Count: > 0 }) return 0;
-
-        if (keys.TryGetNonEnumeratedCount(out var size) && size <= 0)
-        {
-            return 0;
-        }
-
-        var count = 0;
-        // 不使用Linq，避免闭包
-        // ReSharper disable once LoopCanBeConvertedToQuery
-        foreach (var key in keys)
-        {
-            if (dict.Remove(key)) count++;
-        }
-
-        return count;
-    }
+        [InstantHandle] IEnumerable<TKey> keys) => keys.Count(dict.Remove);
 
     /// <summary>
     /// 删除全部指定键集合对应的键值
@@ -449,9 +416,31 @@ public static class DictionaryExtensions
     /// <param name="key2">键2</param>
     /// <param name="value">获取值</param>
     /// <returns>是否成功获取</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static bool TryGetNestedValue<TKey1, TKey2, TValue>(
         this IReadOnlyDictionary<TKey1, Dictionary<TKey2, TValue>> dict,
+        TKey1 key1, TKey2 key2, [MaybeNullWhen(false)] out TValue value) where TKey1 : notnull where TKey2 : notnull
+    {
+        if (dict.TryGetValue(key1, out var nested))
+        {
+            return nested.TryGetValue(key2, out value);
+        }
+
+        value = default;
+        return false;
+    }
+
+    /// <summary>
+    /// 尝试从嵌套字典中获取指定数据
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key1">键1</param>
+    /// <param name="key2">键2</param>
+    /// <param name="value">获取值</param>
+    /// <returns>是否成功获取</returns>
+    [CollectionAccess(CollectionAccessType.Read)]
+    public static bool TryGetNestedValue<TKey1, TKey2, TValue>(
+        this IReadOnlyDictionary<TKey1, IReadOnlyDictionary<TKey2, TValue>> dict,
         TKey1 key1, TKey2 key2, [MaybeNullWhen(false)] out TValue value) where TKey1 : notnull where TKey2 : notnull
     {
         if (dict.TryGetValue(key1, out var nested))
@@ -468,9 +457,28 @@ public static class DictionaryExtensions
     /// </summary>
     /// <param name="dict">字典</param>
     /// <returns>(键1,键2)序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     public static IEnumerable<(TKey1, TKey2)> NestedKeys<TKey1, TKey2, TValue>(
         this IReadOnlyDictionary<TKey1, Dictionary<TKey2, TValue>> dict) where TKey1 : notnull where TKey2 : notnull
+    {
+        foreach (var (key1, nested) in dict)
+        {
+            foreach (var key2 in nested.Keys)
+            {
+                yield return (key1, key2);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取嵌套字典的所有键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <returns>(键1,键2)序列</returns>
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    public static IEnumerable<(TKey1, TKey2)> NestedKeys<TKey1, TKey2, TValue>(
+        this IReadOnlyDictionary<TKey1, IReadOnlyDictionary<TKey2, TValue>> dict)
+        where TKey1 : notnull where TKey2 : notnull
     {
         foreach (var (key1, nested) in dict)
         {
@@ -486,10 +494,22 @@ public static class DictionaryExtensions
     /// </summary>
     /// <param name="dict">字典</param>
     /// <returns>值序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<TValue> NestedValues<TKey1, TKey2, TValue>(
         this IReadOnlyDictionary<TKey1, Dictionary<TKey2, TValue>> dict) where TKey1 : notnull where TKey2 : notnull =>
+        dict.Values.SelectMany(nested => nested.Values);
+
+    /// <summary>
+    /// 获取嵌套字典所有值
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <returns>值序列</returns>
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<TValue> NestedValues<TKey1, TKey2, TValue>(
+        this IReadOnlyDictionary<TKey1, IReadOnlyDictionary<TKey2, TValue>> dict)
+        where TKey1 : notnull where TKey2 : notnull =>
         dict.Values.SelectMany(nested => nested.Values);
 
     /// <summary>
@@ -518,13 +538,19 @@ public static class DictionaryExtensions
     /// <returns>只读字典</returns>
     [Pure, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> dict) =>
+    public static IReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> dict)
+        where TKey : notnull =>
         dict as IReadOnlyDictionary<TKey, TValue> ?? new ReadOnlyDictionaryBridge<TKey, TValue>(dict);
 
     /// <summary>只读字典桥接</summary>
     private sealed class ReadOnlyDictionaryBridge<TKey, TValue>(IDictionary<TKey, TValue> dict)
-        : IReadOnlyDictionary<TKey, TValue>
+        : IReadOnlyDictionary<TKey, TValue> where TKey : notnull
     {
+        /// <summary>
+        /// 空只读字典
+        /// </summary>
+        public static ReadOnlyDictionaryBridge<TKey, TValue> Empty { get; } = new(new Dictionary<TKey, TValue>());
+
         /// <inheritdoc />
         public int Count => dict.Count;
 

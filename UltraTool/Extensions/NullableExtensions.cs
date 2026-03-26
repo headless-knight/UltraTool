@@ -1,13 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
-using NotNullAttribute = System.Diagnostics.CodeAnalysis.NotNullAttribute;
 
 namespace UltraTool.Extensions;
 
 /// <summary>
 /// 可空类型拓展类
 /// </summary>
-[PublicAPI]
 public static class NullableExtensions
 {
     /// <summary>

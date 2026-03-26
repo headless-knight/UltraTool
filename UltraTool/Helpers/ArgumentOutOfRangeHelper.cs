@@ -118,8 +118,8 @@ internal static class ArgumentOutOfRangeHelper
 #endif
         string? paramName = null) where T : IComparable<T>
     {
-        if (value.CompareTo(other) < 0) return;
+        if (value.CompareTo(other) <= 0) return;
 
-        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be less than {other}");
+        throw new ArgumentOutOfRangeException(paramName, value, $"The value must be less than or equal {other}");
     }
 }

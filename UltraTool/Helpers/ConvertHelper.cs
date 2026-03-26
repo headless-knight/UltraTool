@@ -28,7 +28,7 @@ public static class ConvertHelper
     /// <returns>十六进制字符数组</returns>
     public static char[] ToHexChars(ReadOnlySpan<byte> source, bool lowerCase = false)
     {
-        var destination = ArrayHelper.AllocateUninitializedArray<char>(source.Length << 1);
+        var destination = new char[source.Length << 1];
         ToHexChars(source, destination, lowerCase);
         return destination;
     }
@@ -111,7 +111,7 @@ public static class ConvertHelper
                 source = rent.AsReadOnlySpan(0, length);
             }
 
-            var result = ArrayHelper.AllocateUninitializedArray<byte>(source.Length >> 1);
+            var result = new byte[source.Length >> 1];
             FromHexStringInternal(source, result);
             return result;
         }

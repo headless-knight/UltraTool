@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool;
 
@@ -7,7 +6,6 @@ namespace UltraTool;
 /// 处置器
 /// </summary>
 /// <param name="disposer">处置委托</param>
-[PublicAPI]
 public sealed class Disposer(Action disposer) : IDisposable
 {
     private int _disposeFlag;
@@ -25,7 +23,6 @@ public sealed class Disposer(Action disposer) : IDisposable
 /// </summary>
 /// <param name="disposer">处置委托，入参(状态)</param>
 /// <param name="state">状态</param>
-[PublicAPI]
 public sealed class Disposer<T>(Action<T> disposer, T state) : IDisposable
 {
     private int _disposeFlag;
@@ -47,7 +44,6 @@ public sealed class Disposer<T>(Action<T> disposer, T state) : IDisposable
 /// 异步处置器
 /// </summary>
 /// <param name="disposer">异步处置委托</param>
-[PublicAPI]
 public sealed class AsyncDisposer(Func<ValueTask> disposer) : IAsyncDisposable
 {
     private int _disposeFlag;
@@ -64,7 +60,6 @@ public sealed class AsyncDisposer(Func<ValueTask> disposer) : IAsyncDisposable
 /// </summary>
 /// <param name="disposer">异步处置委托，入参(状态)</param>
 /// <param name="state">状态</param>
-[PublicAPI]
 public sealed class AsyncDisposer<T>(Func<T, ValueTask> disposer, T state) : IAsyncDisposable
 {
     private int _disposeFlag;
@@ -85,7 +80,6 @@ public sealed class AsyncDisposer<T>(Func<T, ValueTask> disposer, T state) : IAs
 /// 值类型处置器
 /// </summary>
 /// <param name="disposer">处置委托</param>
-[PublicAPI]
 public struct ValueDisposer(Action disposer) : IDisposable
 {
     private int _disposeFlag;
@@ -103,7 +97,6 @@ public struct ValueDisposer(Action disposer) : IDisposable
 /// </summary>
 /// <param name="disposer">处置委托，入参(状态)</param>
 /// <param name="state">状态</param>
-[PublicAPI]
 public struct ValueDisposer<T>(Action<T> disposer, T state) : IDisposable
 {
     private int _disposeFlag;
@@ -125,7 +118,6 @@ public struct ValueDisposer<T>(Action<T> disposer, T state) : IDisposable
 /// 值类型异步处置器
 /// </summary>
 /// <param name="disposer">异步处置委托</param>
-[PublicAPI]
 public struct ValueAsyncDisposer(Func<ValueTask> disposer) : IAsyncDisposable
 {
     private int _disposeFlag;
@@ -142,7 +134,6 @@ public struct ValueAsyncDisposer(Func<ValueTask> disposer) : IAsyncDisposable
 /// </summary>
 /// <param name="disposer">异步处置委托，入参(状态)</param>
 /// <param name="state">状态</param>
-[PublicAPI]
 public struct ValueAsyncDisposer<T>(Func<T, ValueTask> disposer, T state) : IAsyncDisposable
 {
     private int _disposeFlag;

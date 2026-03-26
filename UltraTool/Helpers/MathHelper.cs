@@ -1,13 +1,13 @@
-﻿using System.Numerics;
+﻿#if NET7_0_OR_GREATER
+using System.Numerics;
+#endif
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool.Helpers;
 
 /// <summary>
 /// 数学帮助类
 /// </summary>
-[PublicAPI]
 public static class MathHelper
 {
     /// <summary>long范围内的阶乘结果</summary>
@@ -24,7 +24,6 @@ public static class MathHelper
     /// <param name="value1">值1</param>
     /// <param name="value2">值2</param>
     /// <returns>最小值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Min<T>(in T value1, in T value2) where T : IComparable<T> =>
         value1.CompareTo(value2) < 0 ? value1 : value2;
@@ -35,7 +34,6 @@ public static class MathHelper
     /// <param name="value1">值1</param>
     /// <param name="value2">值2</param>
     /// <returns>最大值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Max<T>(in T value1, in T value2) where T : IComparable<T> =>
         value1.CompareTo(value2) > 0 ? value1 : value2;
@@ -47,7 +45,6 @@ public static class MathHelper
     /// <param name="value2">值2</param>
     /// <param name="value3">值3</param>
     /// <returns>中间值</returns>
-    [Pure]
     public static T Middle<T>(in T value1, in T value2, in T value3) where T : IComparable<T>
     {
         if (value1.CompareTo(value2) < 0)
@@ -70,8 +67,8 @@ public static class MathHelper
     /// <param name="value3">值3</param>
     /// <param name="comparer">比较器</param>
     /// <returns>中间值</returns>
-    [Pure]
-    public static T Middle<T>(in T value1, in T value2, in T value3, IComparer<T> comparer)
+    public static T Middle<T, TComparer>(in T value1, in T value2, in T value3, TComparer comparer)
+        where TComparer : IComparer<T>
     {
         if (comparer.Compare(value1, value2) < 0)
         {
@@ -91,7 +88,6 @@ public static class MathHelper
     /// <param name="value1">值1</param>
     /// <param name="value2">值2</param>
     /// <returns>(小值,大值)</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (T Min, T Max) MinMax<T>(in T value1, in T value2) where T : IComparable<T> =>
         value1.CompareTo(value2) < 0 ? (value1, value2) : (value2, value1);
@@ -101,7 +97,6 @@ public static class MathHelper
     /// </summary>
     /// <param name="n">数n</param>
     /// <returns>数n的阶乘</returns>
-    [Pure]
     public static long Factorial(int n)
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(n);
@@ -115,7 +110,6 @@ public static class MathHelper
     /// <param name="a">值1</param>
     /// <param name="b">值2</param>
     /// <returns>最大公约数</returns>
-    [Pure]
     public static int Gcd(int a, int b)
     {
         var c = a % b;
@@ -135,7 +129,6 @@ public static class MathHelper
     /// <param name="a">值1</param>
     /// <param name="b">值2</param>
     /// <returns>最小公倍数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Multiple(int a, int b) => a / Gcd(a, b) * b;
 
@@ -146,7 +139,6 @@ public static class MathHelper
     /// <param name="a">值1</param>
     /// <param name="b">值2</param>
     /// <returns>最大公约数</returns>
-    [Pure]
     public static T Gcd<T>(T a, T b) where T : IBinaryInteger<T>
     {
         var c = a % b;
@@ -166,8 +158,7 @@ public static class MathHelper
     /// <param name="a">值1</param>
     /// <param name="b">值2</param>
     /// <returns>最小公倍数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Multiple<T>(T a, T b) where T : IBinaryInteger<T> => a / Gcd(a, b) * b;
+    public static T Lcm<T>(T a, T b) where T : IBinaryInteger<T> => a / Gcd(a, b) * b;
 #endif
 }

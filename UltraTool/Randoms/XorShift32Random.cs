@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool.Randoms;
 
@@ -7,7 +6,6 @@ namespace UltraTool.Randoms;
 /// XorShift32算法随机数生成器
 /// </summary>
 /// <param name="seed">随机数种子</param>
-[PublicAPI]
 public struct XorShift32Random(int seed)
 {
     /// <summary>

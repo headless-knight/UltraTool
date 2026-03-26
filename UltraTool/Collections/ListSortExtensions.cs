@@ -8,7 +8,6 @@ namespace UltraTool.Collections;
 /// <summary>
 /// 列表排序拓展类
 /// </summary>
-[PublicAPI]
 public static class ListSortExtensions
 {
     /// <summary>插入排序阈值</summary>
@@ -122,7 +121,7 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         if (count == 0) return;
 
-        QuickSortInternal(list, index, count, new ValueComparisonComparer<T>(comparison));
+        QuickSortInternal(list, index, index + count - 1, new ValueComparisonComparer<T>(comparison));
     }
 
     /// <summary>
@@ -231,7 +230,7 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         if (count == 0) return;
 
-        var temporary = ArrayHelper.AllocateUninitializedArray<T>(list.Count);
+        var temporary = new T[list.Count];
         MergeSortInternal(list, index, index + count - 1, new ValueComparisonComparer<T>(comparison), temporary);
     }
 
@@ -260,7 +259,7 @@ public static class ListSortExtensions
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + count, list.Count);
         if (count == 0) return;
 
-        var temporary = ArrayHelper.AllocateUninitializedArray<T>(list.Count);
+        var temporary = new T[list.Count];
         MergeSortInternal(list, index, index + count - 1, comparer ?? Comparer<T>.Default, temporary);
     }
 
@@ -422,7 +421,7 @@ public static class ListSortExtensions
         {
             var largest = index;
             var leftChild = ((index - offset) << 1) + 1 + offset;
-            var rightChild = leftChild + 1;
+            var rightChild = ((index - offset) << 1) + 2 + offset;
             if (leftChild < count + offset && comparer.Compare(list[leftChild], list[largest]) > 0)
             {
                 largest = leftChild;
@@ -573,7 +572,7 @@ public static class ListSortExtensions
     [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void TimSort<T>(this IList<T> list, IComparer<T>? comparer = null) =>
-        list.TimSort(0, list.Count, comparer);
+        TimSort(list, 0, list.Count, comparer);
 
     /// <summary>
     /// Tim排序
@@ -604,7 +603,7 @@ public static class ListSortExtensions
             InsertionSortInternal(list, i, Math.Min(i + minRunLength - 1, end), comparer);
         }
 
-        var temporary = ArrayHelper.AllocateUninitializedArray<T>(count);
+        var temporary = new T[count];
         for (var size = minRunLength; size < count; size <<= 1)
         {
             for (var left = index; left < end; left += (size << 1))

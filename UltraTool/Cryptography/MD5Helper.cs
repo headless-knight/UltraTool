@@ -1,7 +1,5 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
-using JetBrains.Annotations;
-using UltraTool.Collections;
 using UltraTool.Helpers;
 
 namespace UltraTool.Cryptography;
@@ -9,7 +7,6 @@ namespace UltraTool.Cryptography;
 /// <summary>
 /// MD5帮助类
 /// </summary>
-[PublicAPI]
 public static class MD5Helper
 {
     /// <summary>MD5数据字节数量</summary>
@@ -22,7 +19,7 @@ public static class MD5Helper
     /// <returns>计算结果</returns>
     public static byte[] Compute(ReadOnlySpan<byte> source)
     {
-        var destination = ArrayHelper.AllocateUninitializedArray<byte>(MD5ByteCount);
+        var destination = new byte[MD5ByteCount];
         Compute(source, destination);
         return destination;
     }

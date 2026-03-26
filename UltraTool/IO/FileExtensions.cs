@@ -6,7 +6,6 @@ namespace UltraTool.IO;
 /// <summary>
 /// 文件拓展类
 /// </summary>
-[PublicAPI]
 public static class FileExtensions
 {
     /// <summary>
@@ -14,7 +13,6 @@ public static class FileExtensions
     /// </summary>
     /// <param name="fileInfo">文件信息</param>
     /// <returns>是否不存在或为空</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsEmpty(this FileInfo fileInfo) => !fileInfo.Exists || fileInfo.Length <= 0;
 
@@ -23,7 +21,6 @@ public static class FileExtensions
     /// </summary>
     /// <param name="fileInfo">文件信息</param>
     /// <returns>是否存在且不为空</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNotEmpty(this FileInfo fileInfo) => !fileInfo.IsEmpty();
 

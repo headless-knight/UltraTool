@@ -582,8 +582,5 @@ indent_size = 2
 [{*.yml,*.yaml}]
 indent_size = 2
 
-[{*.razor,*.html,*.cshtml,*.xaml}]
-indent_size = 2
-
 [{*.css,*.js,*json}]
 indent_size = 2

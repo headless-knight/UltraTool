@@ -1,356 +1,340 @@
 # UltraTool
 
-一款致力于简单易用、减少重复代码的工具库，提供丰富的扩展方法、工具类、工具函数等，帮助开发者提高开发效率，让您的开发速度更快更流畅。
+一款致力于简单易用、减少重复代码的 .NET 工具库，提供丰富的扩展方法、工具类和实用函数，帮助开发者提高开发效率。
 
-## 安装使用
+## 🚀 功能特性
 
-```shell
+- **多框架支持**：支持 .NET 10.0、8.0、6.0 和 .NET Standard 2.1
+- **高性能优化**：使用现代 .NET 特性，提供高性能的扩展方法
+- **类型安全**：严格的类型检查和空值处理
+- **直观易用**：流畅的API设计，减少重复代码编写
+- **全面覆盖**：涵盖集合操作、字符串处理、数值计算、时间日期、随机数生成等常用场景
+
+## 📦 安装
+
+```bash
 dotnet add package UltraTool
 ```
 
-接下来，您就可以在代码中使用UltraTool的所有功能了。
+## 🎯 快速开始
 
-## 功能介绍
-
-此工具库目前仍在持续开发中，功能与文档正在持续补全更新中。
-
-* [池化数组](#池化数组)
-* [异常构建器](#异常构建器)
-* [集合](#集合)
-    * [非标准库类型](#非标准库类型)
-    * [列表拓展](#列表拓展)
-    * [字典拓展](#字典拓展)
-* [随机](#随机)
-* [任务](#任务)
-
-### 池化数组
-
-池化数组为工具库提供的一个基于数组池封装的数组类型，利用数组池，可以减少内存的申请和释放，从而提高性能。
-
-以下是基本使用方法：
+### 集合操作 - 强大的序列处理能力
 
 ```csharp
-// 创建一个容量为100的池化数组
-var array = PooledArray.Get<int>(100);
-// 之后操作与数组基本相同
-// 赋值
-array[0] = 1;
-// 获取索引0的值
-var value = array[0];
+using UltraTool.Collections;
 
-// 为了让数组正确归还到池中，需要您在恰当的时机调用Dispose方法归还数组到池中
-array.Dispose();
-// 您可以显式调用Dispose方法，也可以使用using语句块，以释放资源
+var numbers = new[] { 1, 2, 3, 4, 5 };
+var strings = new[] { "apple", "banana", "cherry" };
 
-// 您也可以自己创建数组池作为池使用，并且可以指定归还数组时是否清空数组内容
-// 创建数组池
-var pool = ArrayPool<int>.Create();
-// 通过自定义的池创建一个容量为100的池化数组，并且在归还时清空数组内容
-var array2 = PooledArray.Get<int>(100, pool, true);
+// 检查集合状态
+bool hasNull = strings.IsAnyNull();        // 是否有null元素
+bool allNull = strings.IsAllNull();        // 是否全为null元素
+bool isSorted = numbers.IsOrdered();       // 是否有序
+
+// 极值获取
+var (min, max) = numbers.MinMax();         // 同时获取最小值和最大值
+var (minDef, maxDef) = numbers.MinMaxOrDefault(0, 100); // 带默认值的极值获取
+
+// 遍历操作
+numbers.ForEach(x => Console.WriteLine(x)); // 简单遍历
+numbers.ForEach((x, i) => Console.WriteLine($"索引{i}: {x}")); // 带索引遍历
+
+// 序列操作
+var indexed = numbers.Index();              // 转换为带索引的序列
+var joined = strings.Join(", ");            // 元素间插入分隔符
+var replaced = numbers.Replace(3, 30);      // 替换指定元素
+
+// 统计功能
+var countMap = strings.CountMap();         // 统计元素出现次数
+bool found = numbers.TryFind(x => x > 3, out var result); // 条件查找
+
+// 字典操作
+var mergedDict = numbers.ToMergedDictionary(x => x % 2, x => x); // 合并字典
+var nestedDict = strings.ToNestedDictionary(s => s.Length, s => s[0]); // 嵌套字典
 ```
 
-### 异常构建器
-
-异常构建器是工具库提供的一个快速构建异常的辅助类，调用Dispose方法时，若有异常信息则会自动抛出异常，可以用于一些需要进行规则检查并抛出异常的场景。
+### 字符串操作 - 安全的空值处理和编码转换
 
 ```csharp
-// 如下场景，如果TestMethod执行过程中AddError被调用了
-// 则在退出方法时会抛出异常并附带错误信息
-public void TestMethod(int x)
+using UltraTool.Text;
+
+string? text = "Hello World";
+string? nullText = null;
+
+// 空值安全检查
+string safeText = text.EmptyIfNull();       // null时返回空字符串
+bool isEmpty = text.IsEmpty();              // 是否空字符串
+bool isBlank = "   ".IsBlank();             // 是否全为空白符
+bool isValid = text.IsNotNullOrBlank();     // 是否有效字符串
+
+// 编码转换
+byte[] bytes = text.GetBytes();             // UTF8编码转换
+byte[] gbBytes = text.GetBytes(Encoding.GetEncoding("GB2312")); // 指定编码
+using var pooledBytes = text.GetBytesPooled(); // 池化字节数组（自动释放）
+```
+
+### 数值操作 - 高效的位运算和数学计算
+
+```csharp
+using UltraTool.Numerics;
+
+int number = 42;  // 二进制: 101010
+
+// 基础判断
+bool isOdd = number.IsOdd();                // 是否为奇数 → true
+bool isEven = number.IsEven();               // 是否为偶数 → false
+
+// 位操作
+int bitCount = number.GetBitOneCount();     // 二进制中1的个数 → 3
+bool isBitSet = number.IsBitOne(3);          // 第3位是否为1 → true (从0开始)
+int setBit = number.CalcSetBitOne(0);        // 设置第0位为1 → 43
+int clearBit = number.CalcSetBitZero(1);    // 清除第1位 → 40
+
+// 浮点数操作
+float value = 3.14f;
+bool isNaN = float.IsNaN(value);
+bool isInfinity = float.IsInfinity(value);
+```
+
+### 时间日期操作 - 丰富的时间处理功能
+
+```csharp
+using UltraTool.Times;
+
+DateTime now = DateTime.Now;
+DateTime birthday = new DateTime(1990, 5, 15);
+
+// 时间判断
+bool isWeekend = now.IsWeekEnd();            // 是否为周末
+bool isLeapYear = birthday.IsLeapYear();     // 是否为闰年
+bool isAm = now.IsAm();                     // 是否为上午
+bool sameDay = now.IsSameDay(birthday);      // 是否同一天
+
+// Unix时间戳转换
+long unixSeconds = now.ToUnixTimeSeconds();          // 秒级时间戳
+long unixMillis = now.ToUnixTimeMilliseconds();       // 毫秒级时间戳
+long unixWithOffset = now.ToUnixTimeSeconds(TimeSpan.FromHours(8)); // 带时区偏移
+
+// 周数计算
+int weekOfYear = now.WeekOfYear();          // 当年第几周
+int dayOfWeek = now.TodayOfWeek();          // 周几（周一为1，周日为7）
+int adjustedDay = now.TodayOfWeek(TimeSpan.FromHours(6)); // 带临界值调整
+
+// .NET 6+ 特性
+#if NET6_0_OR_GREATER
+var dateOnly = now.GetDateOnly();            // 获取日期部分
+var timeOnly = now.GetTimeOnly();            // 获取时间部分
+#endif
+```
+
+### 随机数生成 - 强大的随机化工具
+
+```csharp
+using UltraTool.Randoms;
+
+var random = Random.Shared;
+var items = new[] { "A", "B", "C", "D", "E" };
+var weightedItems = new Dictionary<string, int>
 {
-    // 创建一个异常构建器
-    using var builder = ExceptionBuilder.CreateDefault("测试异常构建");
-    if (x < 0)
-    {
-        builder.AddError("x不能小于0");
-    }
+    ["A"] = 10,
+    ["B"] = 30,
+    ["C"] = 60
+};
 
-    if (x % 2 != 0)
-    {
-        builder.AddError("x不能为奇数");
-    }
+// 基础随机生成
+bool randomBool = random.NextBool();        // 随机布尔值
+byte randomByte = random.NextByte();        // 随机字节 (0-255)
+char randomChar = random.NextChar();        // 随机字符
+float randomFloat = random.NextSingle(0f, 100f); // 随机浮点数
+double randomDouble = random.NextDouble(50.0, 150.0); // 随机双精度
 
-    if (x == 2)
-    {
-        builder.AddError("x不能为2");
-    }
-}
+// 字符串随机
+string randomStr = random.NextString(10);   // 10位随机字符串
+string customStr = random.NextString(5, "ABCD123"); // 从指定字符池生成
+
+// 时间随机
+TimeSpan randomTime = random.NextTimeSpan(); // 随机时间量
+DateTime randomDate = random.NextDateTime(DateTime.Now, DateTime.Now.AddDays(30)); // 随机日期
+
+// 序列操作
+var singleChoice = random.Choice(items);     // 随机选择一个元素
+var multiChoice = random.Choice(items, 3);   // 放回抽取3个元素
+var sample = random.Sample(items, 2);        // 不放回抽取2个元素
+
+// 带权随机
+var weightedChoice = random.ChoiceWeighted(weightedItems); // 带权随机选择
+var weightedSample = random.SampleWeighted(weightedItems, 2); // 不放回带权抽样
+
+// 洗牌操作
+random.Shuffle(items);                       // 打乱数组顺序
+var list = new List<string> { "X", "Y", "Z" };
+random.Shuffle(list);                        // 打乱列表顺序
 ```
 
-### 集合
-
-### 非标准库类型
-
-此库提供了部分标准库未提供的集合类型：
-
-1. ConcurrentHashSet
-
-线程安全的HashSet，内部使用HashSet实现，通过读写锁ReaderWriterLockSlim对HashSet进行读写保护。
-
-2. ConcurrentList
-
-线程安全的List，内部使用List实现，通过读写锁ReaderWriterLockSlim对HashSet进行读写保护。
-
-3. Deque
-
-Deque是一个双端队列，内部使用环形数组实现，支持在队列头和队列尾添加和删除元素。操作示例如下：
+### 数据转换 - 高效的格式转换工具
 
 ```csharp
-var deque = new Deque<int>();
-// 在队列头添加元素
-deque.EnqueueFirst(1);
-// 在队列尾添加元素
-deque.EnqueueLast(2);
-// 获取队列头元素
-var first = deque.PeekFirst();
-// 获取队列尾元素
-var last = deque.PeekLast();
-// 移除队列头元素
-deque.DequeueFirst();
-// 移除队列尾元素
-deque.DequeueLast();
+using UltraTool.Helpers;
+
+// 十六进制转换
+byte[] data = { 0xAB, 0xCD, 0xEF, 0x12, 0x34 };
+string hexUpper = ConvertHelper.ToHexString(data);        // "ABCDEF1234"
+string hexLower = ConvertHelper.ToHexString(data, true);  // "abcdef1234"
+
+char[] hexChars = ConvertHelper.ToHexChars(data);         // 字符数组形式
+byte[] restored = ConvertHelper.FromHexString(hexUpper); // 还原字节数据
+
+// 支持奇数字符串长度
+string oddHex = "ABC";
+byte[] fromOdd = ConvertHelper.FromHexString(oddHex);   // 自动补0 → [0x0A, 0xBC]
 ```
 
-4. SingleLinkedList
+## 📚 API 参考手册
 
-SingleLinkedList是一个单链表，支持在链表头、链表尾以及指定节点后添加和删除元素。操作示例如下：
+### 集合扩展 (`UltraTool.Collections`)
 
-```csharp
-var list = new SingleLinkedList<int>();
-// 添加元素为头节点
-list.AddFirst(1);
-// 添加元素为尾节点
-list.AddLast(2);
-// 在指定节点后添加元素
-list.AddAfter(list.First, 3);
-// 移除指定节点后的节点
-list.RemoveAfter(list.First);
-```
+#### 状态检查
+- `IsAnyNull<T>()` - 检查序列中是否有null元素
+- `IsAllNull<T>()` - 检查序列中是否全为null元素
+- `IsOrdered<T>()` - 检查序列是否有序（升序）
+- `IsOrderedDescending<T>()` - 检查序列是否有序（降序）
 
-### 列表拓展
+#### 极值操作
+- `MinMax<T>()` - 获取序列的最小值和最大值
+- `MinMaxOrDefault<T>()` - 带默认值的极值获取
 
-以下为此库提供的部分列表类型的拓展方法：
+#### 遍历操作
+- `ForEach<T>(Action<T>)` - 简单遍历
+- `ForEach<T>(Action<T, int>)` - 带索引遍历
+- `Index<T>()` - 转换为带索引的序列
 
-1. 判断索引是否合法
+#### 序列处理
+- `Join<T>(T separator)` - 元素间插入分隔符
+- `Replace<T>(T oldValue, T newValue)` - 替换指定元素
+- `StartsWith<T>(IEnumerable<T> values)` - 判断是否以指定序列开头
+- `EndsWith<T>(IEnumerable<T> values)` - 判断是否以指定序列结尾
 
-```csharp
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 返回true
-list.IsValidIndex(2);
-// 返回false
-list.IsValidIndex(5);
-// 判断是否为非法索引，返回true
-list.IsInvalidIndex(-1);
-```
+#### 统计查找
+- `CountMap<T>()` - 统计元素出现次数
+- `TryFind<T>(Predicate<T>, out T)` - 条件查找元素
 
-2. 获取指定索引位置的元素
+#### 字典转换
+- `ToMergedDictionary<T>()` - 转换为合并字典（重复键合并）
+- `ToNestedDictionary<T>()` - 转换为嵌套字典
+- `ToNestedReadOnlyDictionary<T>()` - 转换为只读嵌套字典
 
-```csharp
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 获取索引2的元素，返回true，value为3
-list.TryGetValue(2, out var value);
-// 获取索引5的元素，返回false，value为default(int)
-list.TryGetValue(5, out var value);
-// 获取指定索引的元素，获取不到则返回默认值
-// 索引5没有元素，因此返回100
-list.GetValueOrDefault(5, 100);
-```
+### 字符串扩展 (`UltraTool.Text`)
 
-3. 批量添加元素
+#### 空值安全
+- `EmptyIfNull()` - null时返回空字符串
+- `IsEmpty()` - 是否空字符串
+- `IsNotEmpty()` - 是否非空字符串
+- `IsBlank()` - 是否全为空白符
+- `IsNotNullOrBlank()` - 是否有效非空字符串
 
-```csharp
-IList<int> list = new List<int>();
-list.AddRange(new[] { 1, 2, 3 });
-```
+#### 编码转换
+- `GetBytes()` - UTF8编码转换
+- `GetBytes(Encoding)` - 指定编码转换
+- `GetBytesPooled()` - 池化字节数组转换
 
-4. 删除元素
+### 数值扩展 (`UltraTool.Numerics`)
 
-```csharp
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 删除列表第一个元素
-list.RemoveFirst();
-// 删除列表最后一个元素
-list.RemoveLast();
+#### 基础判断
+- `IsOdd()` - 是否为奇数
+- `IsEven()` - 是否为偶数
 
-// 尝试删除列表中第一个匹配的元素，匹配不到返回false
-list.TryRemoveFirst(x => x == 3, out var removedFirst);
-// 尝试删除列表中从后往前匹配的第一个元素，匹配不到返回false
-list.TryRemoveLast(x => x == 5, out var removedLast);
-```
+#### 位操作
+- `GetBitOneCount()` - 二进制中1的个数
+- `IsBitOne(int index)` - 判断指定位是否为1
+- `CalcSetBitOne(int index)` - 计算设置指定位后的值
+- `CalcSetBitZero(int index)` - 计算清除指定位后的值
 
-5. 交换元素位置
+### 时间日期扩展 (`UltraTool.Times`)
 
-```csharp
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 交换索引1和索引3的位置
-list.Swap(1, 3);
-```
+#### 时间判断
+- `IsWeekEnd()` - 是否为周末
+- `IsLeapYear()` - 是否为闰年
+- `IsLeapMonth()` - 是否为闰月
+- `IsAm()` - 是否为上午
+- `IsPm()` - 是否为下午
+- `IsSameDay(DateTime)` - 是否同一天
+- `IsSameMonth(DateTime)` - 是否同一月
+- `IsSameYear(DateTime)` - 是否同一年
 
-6. 打乱列表顺序
+#### 时间戳转换
+- `ToUnixTimeSeconds()` - 转换为秒级Unix时间戳
+- `ToUnixTimeMilliseconds()` - 转换为毫秒级Unix时间戳
+- 支持带时区偏移的版本
 
-```csharp
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 打乱顺序
-list.Shuffle();
-```
+#### 周数计算
+- `WeekOfYear()` - 获取当年第几周
+- `TodayOfWeek()` - 获取周几（周一为1）
+- 支持临界值调整版本
 
-7. 查找索引
+### 随机数扩展 (`UltraTool.Randoms`)
 
-```csharp
-IList<int> list = new List<int>() { 1, 1, 3, 3, 5 };
-// 查找列表中第一个匹配的元素，匹配不到返回-1
-var index = list.IndexOf(3);
-// 查找列表中从后往前匹配的第一个元素，匹配不到返回-1
-var index2 = list.LastIndexOf(5);
-// 查找列表中所有匹配的元素索引
-var indexes = list.IndexesOf();
+#### 基础随机
+- `NextBool()` - 随机布尔值
+- `NextByte()` - 随机字节
+- `NextChar()` - 随机字符
+- `NextSingle()` - 随机单精度浮点数
+- `NextDouble()` - 随机双精度浮点数
+- `NextString(int length)` - 随机字符串
+- `NextTimeSpan()` - 随机时间量
+- `NextDateTime()` - 随机日期时间
 
-// 按条件查找列表中第一个匹配的元素，匹配不到返回-1
-var index3 = list.FindIndex(x => x == 3);
-// 按条件查找列表中从后往前匹配的第一个元素，匹配不到返回-1
-var index4 = list.FindLastIndex(x => x == 5);
-// 按条件查找列表中所有匹配的元素索引
-var indexes2 = list.FindIndexes(x => x == 3);
-```
+#### 序列操作
+- `Choice<T>()` - 随机选择一个元素
+- `TryChoice<T>()` - 尝试随机选择元素
+- `Sample<T>()` - 不放回抽样
+- `SampleShuffle<T>()` - 洗牌式抽样
+- `Shuffle<T>()` - 打乱序列顺序
 
-8. 查找元素
+#### 带权随机
+- `ChoiceWeighted<T>()` - 带权随机选择
+- `SampleWeighted<T>()` - 不放回带权抽样
+- 支持字典和IWeighted接口两种形式
 
-```csharp
-IList<int> list = new List<int>() { 1, 1, 3, 3, 5 };
-// 尝试查找列表中第一个匹配的元素，匹配不到返回false
-list.TryFindFirst(x => x == 3, out var found);
-// 尝试查找列表中从后往前匹配的第一个元素，匹配不到返回false
-list.TryFindLast(x => x == 5, out var found2);
-```
+### 转换工具 (`UltraTool.Helpers`)
 
-9. 排序
+#### 十六进制转换
+- `ToHexString(byte[])` - 字节数组转十六进制字符串
+- `ToHexChars(byte[])` - 字节数组转十六进制字符数组
+- `FromHexString(string)` - 十六进制字符串转字节数组
+- 支持大小写控制和奇数字符串自动补0
 
-```csharp
-var list = new List<int> { 5, 3, 1, 4, 2 };
-// 插入排序
-list.InsertionSort();
-// 快速排序
-list.QuickSort();
-// 归并排序
-list.MergeSort();
-```
+## 🔧 性能优化特性
 
-### 字典拓展
+- **池化内存**：使用 `PooledArray<T>` 减少内存分配
+- **内联优化**：大量使用 `MethodImplOptions.AggressiveInlining`
+- **跨度操作**：充分利用 `Span<T>` 和 `ReadOnlySpan<T>`
+- **非枚举计数**：优先使用 `TryGetNonEnumeratedCount()` 避免枚举
+- **泛型约束**：使用现代泛型特性提升性能
 
-以下为此库提供的部分字典类型的拓展方法：
+## 🤝 贡献指南
 
-1. 获取或添加
+欢迎提交 Issue 和 Pull Request 来改进这个项目！
 
-```csharp
-var dict = new Dictionary<int, string>();
-// 获取或添加，如果key不存在，则添加键值对
-dict.GetOrAdd(1, "one");
-// 也可以指定委托生成值，入参为key
-dict.GetOrAdd(2, args => $"{args}");
-```
+### 开发环境要求
+- .NET 8.0 SDK 或更高版本
+- JetBrains Annotations 支持
 
-2. 获取或创建
+### 代码规范
+- 遵循 C# 编码规范
+- 使用 XML 文档注释
+- 包含单元测试
+- 确保多框架兼容性
 
-```csharp
-var dict = new Dictionary<int, List<string>>();
-// 获取或创建，如果key不存在，则创建一个值并添加键值对，字典的Value类型必须提供无参构造函数
-dict.GetOrCreate(1);
-```
+## 📄 许可证
 
-3. 交换键值
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
-```csharp
-var dict = new Dictionary<int, string>() { { 1, "one" }, { 2, "two" } };
-// 交换键值，将1和2的值互换
-dict.Swap(1, 2);
-```
+## 🔗 相关链接
 
-4. 打乱键值
+- [GitHub 仓库](https://github.com/headless-knight/UltraTool)
+- [NuGet 包](https://www.nuget.org/packages/UltraTool/)
+- [问题反馈](https://github.com/headless-knight/UltraTool/issues)
 
-```csharp
-var dict = new Dictionary<int, string>() { { 1, "one" }, { 2, "two" } };
-// 打乱所有的键值对映射
-dict.Shuffle();
-```
+---
 
-### 随机
-
-以下为此库提供的部分随机拓展方法：
-
-1. 获取随机元素
-
-```csharp
-var random = new Random();
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 获取列表中一个随机元素
-var value = random.NextItem(list);
-```
-
-2. 获取多个随机元素
-
-```csharp
-var random = new Random();
-var list = new List<int> { 1, 2, 3, 4, 5 };
-// 放回抽取多个随机元素，即可能重复抽取同一个元素，此处为获取3个
-var values = random.NextItemsSelection(list, 3);
-// 不放回抽取多个随机元素，每次只能抽取一个元素，此处为获取3个
-var values2 = random.NextItemsSample(list, 3);
-```
-
-3. 带权重抽取
-
-```csharp
-var random = new Random();
-// 键为元素，值为权重
-var itemWeight = new Dictionary<int, int>() { { 1, 10 }, { 2, 5 }, { 3, 2 } };
-var item = random.NextWeighted(itemWeight);
-```
-
-4. 带权重抽取多个
-
-```csharp
-var random = new Random();
-// 键为元素，值为权重
-var itemWeight = new Dictionary<int, int>() { { 1, 10 }, { 2, 5 }, { 3, 2 } };
-// 放回抽取多个元素，即可能重复抽取同一个元素，此处为获取3个
-var items = random.NextWeightedSelection(itemWeight, 3);
-// 不放回抽取多个元素，每次只能抽取一个元素，此处为获取3个
-var items2 = random.NextWeightedSample(itemWeight, 3);
-```
-
-### 任务
-
-此库提供了部分对Task和ValueTask的拓展方法，以简化使用。
-
-1. 获取任务结果
-
-```csharp
-Task<int> task = Task.FromResult(1);
-var result = task.GetResult();
-
-ValueTask<int> valueTask = new ValueTask<int>(1);
-var result2 = valueTask.GetResult();
-```
-
-2. 忽略任务结果异常
-
-```csharp
-Task task = Task.FromException(new Exception());
-// 忽略任务的结果和异常
-task.IgnoreResult();
-// 只忽略异常，此方法仍然返回Task
-await task.IgnoreException();
-
-// 上述任务抛出异常时都会被忽略，避免线程崩溃。
-// 如果需要打印异常信息，可以订阅异常事件，TaskHelper.IgnoreExceptionCaught
-TaskHelper.IgnoreExceptionCaught += (exception) => Console.WriteLine(exception.Message);
-```
-
-3. 等待多个任务完成
-
-```csharp
-Task task1 = Task.FromResult(1);
-Task task2 = Task.FromResult(2);
-// 等待两个任务并获取结果
-var (result1, result2) = await TaskHelper.AwaitAll(task1, task2);
-```
+**UltraTool** - 让 .NET 开发更高效、更简洁！

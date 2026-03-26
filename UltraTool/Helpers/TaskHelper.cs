@@ -271,7 +271,7 @@ public static class TaskHelper
     {
         if (tasks is not { Length: > 0 }) return [];
 
-        var result = ArrayHelper.AllocateUninitializedArray<T>(tasks.Length);
+        var result = new T[tasks.Length];
         for (var i = 0; i < tasks.Length; i++)
         {
             result[i] = await tasks[i].ConfigureAwait(false);
@@ -291,7 +291,7 @@ public static class TaskHelper
         {
             if (size <= 0) return [];
 
-            var result = ArrayHelper.AllocateUninitializedArray<T>(size);
+            var result = new T[size];
             var index = 0;
             foreach (var task in tasks)
             {
@@ -302,7 +302,7 @@ public static class TaskHelper
         }
 
         var taskArray = tasks.ToArray();
-        var resultArray = ArrayHelper.AllocateUninitializedArray<T>(taskArray.Length);
+        var resultArray = new T[taskArray.Length];
         for (var i = 0; i < taskArray.Length; i++)
         {
             resultArray[i] = await taskArray[i].ConfigureAwait(false);

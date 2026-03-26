@@ -4,9 +4,8 @@ using JetBrains.Annotations;
 namespace UltraTool.Compares;
 
 /// <summary>
-/// 可比较区间
+/// 比较范围
 /// </summary>
-[PublicAPI]
 public readonly struct ComparableRange<T> : IComparableRange<T> where T : IComparable<T>
 {
     /// <summary>
@@ -47,7 +46,6 @@ public readonly struct ComparableRange<T> : IComparableRange<T> where T : ICompa
     /// </summary>
     /// <param name="value">值</param>
     /// <returns>是否在比较范围内</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsIn(in T value) => CompareHelper.InRangeInternal(value, Start, End, Mode);
 
@@ -56,7 +54,6 @@ public readonly struct ComparableRange<T> : IComparableRange<T> where T : ICompa
     /// </summary>
     /// <param name="value">值</param>
     /// <returns>是否在比较范围外</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsOut(in T value) => CompareHelper.OutRangeInternal(value, Start, End, Mode);
 }

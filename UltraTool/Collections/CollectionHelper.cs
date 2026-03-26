@@ -1,11 +1,8 @@
-using JetBrains.Annotations;
-
 namespace UltraTool.Collections;
 
 /// <summary>
 /// 集合帮助类
 /// </summary>
-[PublicAPI]
 public static class CollectionHelper
 {
     /// <summary>
@@ -17,7 +14,6 @@ public static class CollectionHelper
     /// <param name="coll1">集合1</param>
     /// <param name="coll2">集合2</param>
     /// <returns>并集的集合</returns>
-    [Pure]
     public static List<T> Union<T>(IReadOnlyCollection<T> coll1, IReadOnlyCollection<T> coll2) where T : notnull
     {
         if (coll1 is not { Count: > 0 }) return [..coll2];
@@ -50,7 +46,6 @@ public static class CollectionHelper
     /// <param name="coll1">集合1</param>
     /// <param name="coll2">集合2</param>
     /// <returns>交集的集合</returns>
-    [Pure]
     public static List<T> Intersection<T>(IReadOnlyCollection<T> coll1, IReadOnlyCollection<T> coll2) where T : notnull
     {
         if (coll1 is not { Count: > 0 } || coll2 is not { Count: > 0 }) return [];
@@ -84,7 +79,6 @@ public static class CollectionHelper
     /// <param name="coll1">集合1</param>
     /// <param name="coll2">集合2</param>
     /// <returns>差集的集合</returns>
-    [Pure]
     public static List<T> Disjunction<T>(IReadOnlyCollection<T> coll1, IReadOnlyCollection<T> coll2) where T : notnull
     {
         if (coll1 is not { Count: > 0 }) return coll2.ToList();

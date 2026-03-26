@@ -1,13 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool;
 
 /// <summary>
 /// 值类型秒表
 /// </summary>
-[PublicAPI]
 public struct ValueStopwatch
 {
     private static readonly double TimestampToTicks = TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
@@ -28,7 +26,6 @@ public struct ValueStopwatch
     /// </summary>
     public readonly long ElapsedTicks
     {
-        [Pure]
         get
         {
             // 时间戳值为正表示秒表开始运行的时间
@@ -37,7 +34,8 @@ public struct ValueStopwatch
             long delta;
             if (IsRunning)
             {
-                delta = GetTimestamp() - timestamp;
+                var end = Stopwatch.GetTimestamp();
+                delta = end - timestamp;
             }
             else
             {
@@ -70,7 +68,6 @@ public struct ValueStopwatch
     /// 负值表示秒表停止的总持续时间的负值
     /// </remarks>
     /// <returns>计数器值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly long GetRawTimestamp() => _value;
 
@@ -126,7 +123,6 @@ public struct ValueStopwatch
     /// 创建并启动新秒表实例
     /// </summary>
     /// <returns>秒表</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueStopwatch StartNew() => new(GetTimestamp());
 
@@ -135,7 +131,6 @@ public struct ValueStopwatch
     /// </summary>
     /// <param name="elapsed">初始时间跨度</param>
     /// <returns>秒表</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueStopwatch StartNew(TimeSpan elapsed) =>
         new(GetTimestamp() - (long)(elapsed.TotalSeconds * Stopwatch.Frequency));
@@ -144,7 +139,6 @@ public struct ValueStopwatch
     /// 获取计时器机制中的刻度数
     /// </summary>
     /// <returns>刻度数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long GetTimestamp() => Stopwatch.GetTimestamp();
 
@@ -153,7 +147,6 @@ public struct ValueStopwatch
     /// </summary>
     /// <param name="startingTimestamp">起始时间戳</param>
     /// <returns>时间跨度</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TimeSpan GetElapsedTime(long startingTimestamp) => GetElapsedTime(startingTimestamp, GetTimestamp());
 
@@ -163,7 +156,6 @@ public struct ValueStopwatch
     /// <param name="startingTimestamp">起始时间戳</param>
     /// <param name="endingTimestamp">结束时间戳</param>
     /// <returns>时间跨度</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp) =>
         new((long)((endingTimestamp - startingTimestamp) * TimestampToTicks));
@@ -174,7 +166,6 @@ public struct ValueStopwatch
     /// <param name="start">起始时间戳</param>
     /// <param name="end">结束时间戳</param>
     /// <returns>秒表</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueStopwatch FromTimestamp(long start, long end) => new(-(end - start));
 

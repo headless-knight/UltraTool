@@ -1,12 +1,10 @@
 ﻿using System.Security.Cryptography;
-using JetBrains.Annotations;
 
 namespace UltraTool.Cryptography;
 
 /// <summary>
 /// 加密帮助类
 /// </summary>
-[PublicAPI]
 public static class CryptoHelper
 {
     /// <summary>

@@ -1,12 +1,10 @@
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool.Compares;
 
 /// <summary>
 /// 可比较区间接口
 /// </summary>
-[PublicAPI]
 public interface IComparableRange<T> : IRange<T> where T : IComparable<T>
 {
     /// <summary>
@@ -14,7 +12,6 @@ public interface IComparableRange<T> : IRange<T> where T : IComparable<T>
     /// </summary>
     /// <param name="value">值</param>
     /// <returns>是否在范围内</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool IsIn(T value) => CompareHelper.InRangeInternal(value, Start, End, Mode);
 
@@ -23,7 +20,6 @@ public interface IComparableRange<T> : IRange<T> where T : IComparable<T>
     /// </summary>
     /// <param name="value">值</param>
     /// <returns>是否在范围外</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool IsOut(T value) => CompareHelper.OutRangeInternal(value, Start, End, Mode);
 }

@@ -11,7 +11,6 @@ namespace UltraTool;
 /// <summary>
 /// 池化数组静态类
 /// </summary>
-[PublicAPI]
 public static class PooledArray
 {
     /// <summary>
@@ -20,7 +19,7 @@ public static class PooledArray
     /// <param name="length">初始长度</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> Get<T>(int length, bool? clearArray = null) => new(length, clearArray);
 
@@ -31,7 +30,7 @@ public static class PooledArray
     /// <param name="pool">数组池</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> Get<T>(int length, ArrayPool<T> pool, bool? clearArray = null) =>
         new(length, pool, clearArray);
@@ -42,7 +41,7 @@ public static class PooledArray
     /// <param name="length">初始长度</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> GetCleared<T>(int length, bool? clearArray = null)
     {
@@ -57,7 +56,7 @@ public static class PooledArray
     /// <param name="span">只读跨度</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> From<T>(ReadOnlySpan<T> span, bool? clearArray = null) =>
         From(span.Length, span, ArrayPool<T>.Shared, clearArray);
@@ -69,7 +68,7 @@ public static class PooledArray
     /// <param name="pool">数组池</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> From<T>(ReadOnlySpan<T> span, ArrayPool<T> pool, bool? clearArray = null) =>
         From(span.Length, span, pool, clearArray);
@@ -81,7 +80,7 @@ public static class PooledArray
     /// <param name="span">只读跨度</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> From<T>(int length, ReadOnlySpan<T> span, bool? clearArray = null) =>
         From(length, span, ArrayPool<T>.Shared, clearArray);
@@ -94,7 +93,7 @@ public static class PooledArray
     /// <param name="pool">数组池</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     public static PooledArray<T> From<T>(int length, ReadOnlySpan<T> span, ArrayPool<T> pool, bool? clearArray = null)
     {
         ArgumentOutOfRangeHelper.ThrowIfLessThan(length, span.Length);
@@ -109,7 +108,7 @@ public static class PooledArray
     /// <param name="source">源序列</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PooledArray<T> ToPooledArray<T>([InstantHandle] this IEnumerable<T> source, bool? clearArray = null)
         => source.ToPooledArray(ArrayPool<T>.Shared, clearArray);
@@ -121,7 +120,7 @@ public static class PooledArray
     /// <param name="pool">数组池</param>
     /// <param name="clearArray">是否归还时清空数组，默认null</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     public static PooledArray<T> ToPooledArray<T>([InstantHandle] this IEnumerable<T> source, ArrayPool<T> pool,
         bool? clearArray = null)
     {
@@ -142,15 +141,15 @@ public static class PooledArray
 /// <summary>
 /// 池化数组
 /// </summary>
-[PublicAPI, MustDisposeResource]
+[MustDisposeResource]
 public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
 {
     /// <summary>默认数组池</summary>
     private static ArrayPool<T> DefaultPool => ArrayPool<T>.Shared;
 
-    private readonly ArrayPool<T> _pool;
+    private readonly ArrayPool<T>? _pool;
     private readonly bool _clearArray;
-    private T[]? _array;
+    private readonly T[]? _array;
     private int _length;
 
     /// <summary>
@@ -174,7 +173,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
             ArgumentOutOfRangeHelper.ThrowIfGreaterThan(value, Capacity);
             if (!IsEmpty && value < _length && RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
-                Array.Clear(RawArray, value, _length - value);
+                Array.Clear(_array!, value, _length - value);
             }
 
             _length = value;
@@ -243,7 +242,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <inheritdoc cref="IList{T}.this"/>
     public readonly T this[int index]
     {
-        [Pure, CollectionAccess(CollectionAccessType.Read)]
+        [CollectionAccess(CollectionAccessType.Read)]
         get
         {
             ArgumentOutOfRangeHelper.ThrowIfNegative(index);
@@ -303,21 +302,21 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="action">遍历操作，入参(元素)</param>
     public readonly void ForEach(Action<T> action)
     {
-        if (_array is not { Length: > 0 }) return;
+        if (IsEmpty) return;
 
         for (var i = 0; i < Length; i++)
         {
-            action.Invoke(_array[i]);
+            action.Invoke(_array![i]);
         }
     }
 
     /// <inheritdoc />
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool Contains(T item) => IndexOf(item) >= 0;
 
     /// <inheritdoc />
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int IndexOf(T item) => Array.IndexOf(RawArray, item, 0, Length);
 
@@ -327,7 +326,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="item">元素</param>
     /// <param name="startIndex">起始索引</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int IndexOf(T item, int startIndex) => IndexOf(item, startIndex, Length - startIndex);
 
@@ -338,7 +337,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="startIndex">起始索引</param>
     /// <param name="count">查找数量</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly int IndexOf(T item, int startIndex, int count)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
@@ -350,7 +349,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="item">元素</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int LastIndexOf(T item) => Array.LastIndexOf(RawArray, item, Length - 1, Length);
 
@@ -360,7 +359,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="item">元素</param>
     /// <param name="startIndex">起始索引</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int LastIndexOf(T item, int startIndex) => LastIndexOf(item, startIndex, startIndex + 1);
 
@@ -371,7 +370,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="startIndex">起始索引</param>
     /// <param name="count">数量</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly int LastIndexOf(T item, int startIndex, int count)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(startIndex, Length);
@@ -383,14 +382,14 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="match">条件委托</param>
     /// <returns>查找结果</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly T? Find(Predicate<T> match)
     {
-        if (_array is not { Length: > 0 }) return default;
+        if (IsEmpty) return default;
 
         for (var i = 0; i < Length; i++)
         {
-            var item = _array[i];
+            var item = _array![i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -404,14 +403,14 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="match">条件委托</param>
     /// <returns>查找结果</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly T? FindLast(Predicate<T> match)
     {
-        if (_array is not { Length: > 0 }) return default;
+        if (IsEmpty) return default;
 
         for (var i = Length - 1; i >= 0; i--)
         {
-            var item = _array[i];
+            var item = _array![i];
             if (!match.Invoke(item)) continue;
 
             return item;
@@ -425,15 +424,16 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="match">条件委托</param>
     /// <returns>元素列表</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly List<T> FindAll(Predicate<T> match)
     {
+        if (IsEmpty) return [];
+
         var list = new List<T>();
-        var array = RawArray;
         for (var i = 0; i < Length; i++)
         {
-            var item = array[i];
+            var item = _array![i];
             if (!match.Invoke(item)) continue;
 
             list.Add(item);
@@ -447,7 +447,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int FindIndex(Predicate<T> match) => Array.FindIndex(RawArray, 0, Length, match);
 
@@ -457,7 +457,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="startIndex">起始索引</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int FindIndex(int startIndex, Predicate<T> match) =>
         FindIndex(startIndex, Length - startIndex, match);
@@ -469,7 +469,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="count">查找数量</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly int FindIndex(int startIndex, int count, Predicate<T> match)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
@@ -481,7 +481,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int FindLastIndex(Predicate<T> match) => Array.FindLastIndex(RawArray, Length - 1, Length, match);
 
@@ -491,7 +491,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="startIndex">起始索引</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int FindLastIndex(int startIndex, Predicate<T> match) =>
         FindLastIndex(startIndex, startIndex + 1, match);
@@ -503,7 +503,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="count">数量</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly int FindLastIndex(int startIndex, int count, Predicate<T> match)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(startIndex + count, Length);
@@ -516,7 +516,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="value">值</param>
     /// <param name="comparison">比较表达式</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int BinarySearch(T value, Comparison<T> comparison) =>
         BinarySearch(value, new ComparisonComparer<T>(comparison));
@@ -529,7 +529,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="value">值</param>
     /// <param name="comparison">比较表达式</param>
     /// <returns>查找结果索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int BinarySearch(int index, int length, T value, Comparison<T> comparison) =>
         BinarySearch(index, length, value, new ComparisonComparer<T>(comparison));
@@ -540,7 +540,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="value">值</param>
     /// <param name="comparer">比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int BinarySearch(T value, IComparer<T>? comparer = null) =>
         Array.BinarySearch(RawArray, 0, Length, value, comparer);
@@ -553,7 +553,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="value">值</param>
     /// <param name="comparer">比较器，默认为null</param>
     /// <returns>查找结果索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly int BinarySearch(int index, int length, T value, IComparer<T>? comparer = null)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(index + length, Length);
@@ -565,7 +565,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="start">起始索引</param>
     /// <returns>跨度</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Span<T> Slice(int start) => Slice(start, Length - start);
 
@@ -575,7 +575,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="start">起始索引</param>
     /// <param name="length">长度</param>
     /// <returns>跨度</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Span<T> Slice(int start, int length)
     {
@@ -588,7 +588,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// </summary>
     /// <param name="start">起始索引</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly PooledArray<T> GetRange(int start) => GetRange(start, Length - start);
 
@@ -598,11 +598,11 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// <param name="start">起始索引</param>
     /// <param name="length">长度</param>
     /// <returns>池化数组</returns>
-    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
     public readonly PooledArray<T> GetRange(int start, int length)
     {
         ArgumentOutOfRangeHelper.ThrowIfGreaterThan(start + length, Length);
-        var result = new PooledArray<T>(length);
+        var result = new PooledArray<T>(length, GetArrayPool(), _clearArray);
         var source = new ReadOnlySpan<T>(_array, start, length);
         source.CopyTo(result.Span);
         return result;
@@ -711,36 +711,28 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     /// 从池化数组拷贝到数组
     /// </summary>
     /// <returns>数组</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public readonly T[] ToArray()
     {
         if (IsEmpty) return [];
 
-        var array = ArrayHelper.AllocateUninitializedArray<T>(Length);
-        Array.Copy(RawArray, 0, array, 0, Length);
+        var array = new T[Length];
+        Array.Copy(_array!, 0, array, 0, Length);
         return array;
     }
 
-    /// <summary>
-    /// 将池化数组内容格式化为字符串
-    /// </summary>
-    /// <returns>字符串</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly string DumpAsString() => ReadOnlySpan.DumpAsString();
-
     /// <inheritdoc cref="IEnumerable{T}.GetEnumerator" />
-    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly ArraySegment<T>.Enumerator GetEnumerator() => Segment.GetEnumerator();
 
     /// <inheritdoc />
-    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc />
-    [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+    [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -749,7 +741,7 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     {
         if (_array != null)
         {
-            _pool.Return(_array, _clearArray);
+            GetArrayPool().Return(_array, _clearArray);
         }
 
         this = default;
@@ -758,16 +750,20 @@ public struct PooledArray<T> : IList<T>, IReadOnlyList<T>, IDisposable
     #region 不受支持的方法
 
     /// <inheritdoc />
-    void ICollection<T>.Add(T item) => throw new NotImplementedException();
+    void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
     /// <inheritdoc />
-    void IList<T>.Insert(int index, T item) => throw new NotImplementedException();
+    void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
 
     /// <inheritdoc />
-    bool ICollection<T>.Remove(T item) => throw new NotImplementedException();
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     /// <inheritdoc />
-    void IList<T>.RemoveAt(int index) => throw new NotImplementedException();
+    void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
 
     #endregion
+
+    /// <summary>获取数组池</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly ArrayPool<T> GetArrayPool() => _pool ?? DefaultPool;
 }

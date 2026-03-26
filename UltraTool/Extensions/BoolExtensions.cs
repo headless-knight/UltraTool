@@ -6,7 +6,6 @@ namespace UltraTool.Extensions;
 /// <summary>
 /// 布尔拓展类
 /// </summary>
-[PublicAPI]
 public static class BoolExtensions
 {
     /// <summary>
@@ -14,7 +13,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>True的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountTrue([InstantHandle] this IEnumerable<bool> iter) => iter.Count(static item => item);
 
@@ -23,7 +21,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>True的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountTrue([InstantHandle] this IEnumerable<bool?> iter) =>
         iter.Count(static item => item is true);
@@ -33,7 +30,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>False的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountFalse([InstantHandle] this IEnumerable<bool> iter) => iter.Count(static item => !item);
 
@@ -42,7 +38,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>False的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountFalse([InstantHandle] this IEnumerable<bool?> iter) =>
         iter.Count(static item => item is false);
@@ -52,7 +47,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>True的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountNotTrue([InstantHandle] this IEnumerable<bool?> iter) =>
         iter.Count(static item => item is not true);
@@ -62,7 +56,6 @@ public static class BoolExtensions
     /// </summary>
     /// <param name="iter">布尔序列</param>
     /// <returns>False的数量</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountNotFalse([InstantHandle] this IEnumerable<bool?> iter) =>
         iter.Count(static item => item is not false);

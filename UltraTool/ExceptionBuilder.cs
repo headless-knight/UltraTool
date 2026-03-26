@@ -2,14 +2,12 @@
 using System.Diagnostics.CodeAnalysis;
 #endif
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool;
 
 /// <summary>
 /// 异常构建器
 /// </summary>
-[PublicAPI]
 public interface IExceptionBuilder
 {
     /// <summary>
@@ -60,7 +58,6 @@ public interface IExceptionBuilder
 /// <summary>
 /// 异常构建器
 /// </summary>
-[PublicAPI]
 public interface IExceptionBuilder<out T> : IExceptionBuilder where T : Exception
 {
     /// <summary>
@@ -78,7 +75,6 @@ public interface IExceptionBuilder<out T> : IExceptionBuilder where T : Exceptio
 /// <summary>
 /// 异常构建器静态类
 /// </summary>
-[PublicAPI]
 public static class ExceptionBuilder
 {
     /// <summary>
@@ -108,7 +104,6 @@ public static class ExceptionBuilder
 /// 异常构建器
 /// </summary>
 /// <remarks>当调用<see cref="IDisposable.Dispose"/>时，将调用<see cref="IExceptionBuilder{T}.ThrowIfHasError"/></remarks>
-[PublicAPI]
 public sealed class ExceptionBuilder<
 #if NET5_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -166,14 +161,23 @@ public sealed class ExceptionBuilder<
     }
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose() => ThrowIfHasError();
+    public void Dispose()
+    {
+        try
+        {
+            ThrowIfHasError();
+        }
+        finally
+        {
+            _errors?.Clear();
+            _errors = null;
+        }
+    }
 }
 
 /// <summary>
 /// 值类型异常构建器静态类
 /// </summary>
-[PublicAPI]
 public static class ValueExceptionBuilder
 {
     /// <summary>
@@ -203,7 +207,6 @@ public static class ValueExceptionBuilder
 /// 值类型异常构建器
 /// </summary>
 /// <remarks>当调用<see cref="IDisposable.Dispose"/>时，将调用<see cref="IExceptionBuilder{T}.ThrowIfHasError"/></remarks>
-[PublicAPI]
 public struct ValueExceptionBuilder<
 #if NET5_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -261,6 +264,16 @@ public struct ValueExceptionBuilder<
     }
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly void Dispose() => ThrowIfHasError();
+    public void Dispose()
+    {
+        try
+        {
+            ThrowIfHasError();
+        }
+        finally
+        {
+            _errors?.Clear();
+            _errors = null;
+        }
+    }
 }

@@ -6,7 +6,6 @@ namespace UltraTool.IO;
 /// <summary>
 /// 目录帮助类
 /// </summary>
-[PublicAPI]
 public static class DirectoryHelper
 {
     /// <summary>
@@ -16,7 +15,6 @@ public static class DirectoryHelper
     /// <param name="pattern">匹配模式，默认全匹配</param>
     /// <param name="recursive">是否遍历子目录，默认true</param>
     /// <returns>文件路径数组</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string[] GetFiles(string dir, string pattern = "*", bool recursive = true) =>
         Directory.GetFiles(dir, pattern, recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
@@ -28,7 +26,6 @@ public static class DirectoryHelper
     /// <param name="pattern">匹配模式，默认全匹配</param>
     /// <param name="recursive">是否遍历子目录，默认true</param>
     /// <returns>目录路径数组</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string[] GetDirectories(string dir, string pattern = "*", bool recursive = true) =>
         Directory.GetDirectories(dir, pattern, recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);

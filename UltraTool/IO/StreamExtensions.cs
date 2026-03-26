@@ -1,13 +1,11 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace UltraTool.IO;
 
 /// <summary>
 /// 流拓展类
 /// </summary>
-[PublicAPI]
 public static class StreamExtensions
 {
     /// <summary>默认缓冲大小</summary>
@@ -89,7 +87,6 @@ public static class StreamExtensions
     /// </summary>
     /// <param name="sequence">只读字节序列</param>
     /// <returns>流</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Stream WrapStream(this ReadOnlySequence<byte> sequence) =>
         new ReadOnlySequenceStreamBridge(sequence);
@@ -150,13 +147,13 @@ public static class StreamExtensions
         #region 不支持操作
 
         /// <inheritdoc />
-        public override void SetLength(long value) => throw new NotImplementedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
 
         /// <inheritdoc />
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
         /// <inheritdoc />
-        public override void Flush() => throw new NotImplementedException();
+        public override void Flush() => throw new NotSupportedException();
 
         #endregion
     }

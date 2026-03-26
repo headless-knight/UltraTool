@@ -1,7 +1,6 @@
 ﻿#if NET5_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
-using JetBrains.Annotations;
 
 namespace UltraTool;
 
@@ -9,7 +8,6 @@ namespace UltraTool;
 /// <summary>
 /// 单例接口
 /// </summary>
-[PublicAPI]
 public interface ISingleton<out T>
 {
     /// <summary>
@@ -22,7 +20,6 @@ public interface ISingleton<out T>
 /// <summary>
 /// 单例基类
 /// </summary>
-[PublicAPI]
 public abstract class Singleton<
 #if NET5_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]

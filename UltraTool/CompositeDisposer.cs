@@ -6,7 +6,6 @@ namespace UltraTool;
 /// <summary>
 /// 组合处置器
 /// </summary>
-[PublicAPI]
 public sealed class CompositeDisposer : IDisposable
 {
     private readonly IDisposable[] _disposables;
@@ -41,7 +40,6 @@ public sealed class CompositeDisposer : IDisposable
 /// <summary>
 /// 异步组合处置器
 /// </summary>
-[PublicAPI]
 public sealed class AsyncCompositeDisposer : IAsyncDisposable
 {
     private readonly IAsyncDisposable[] _disposables;

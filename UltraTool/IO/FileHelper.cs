@@ -1,13 +1,11 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace UltraTool.IO;
 
 /// <summary>
 /// 文件帮助类
 /// </summary>
-[PublicAPI]
 public static class FileHelper
 {
     /// <summary>Utf8无Bom</summary>

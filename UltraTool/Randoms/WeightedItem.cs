@@ -1,5 +1,3 @@
-using JetBrains.Annotations;
-
 namespace UltraTool.Randoms;
 
 /// <summary>
@@ -7,7 +5,6 @@ namespace UltraTool.Randoms;
 /// </summary>
 /// <param name="item">元素</param>
 /// <param name="weight">权重</param>
-[PublicAPI]
 public class WeightedItem<T>(T item, int weight) : IWeighted
 {
     /// <summary>

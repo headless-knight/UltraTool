@@ -72,7 +72,7 @@ public static class DictionaryArithmeticExtensions
     {
         if (!dict.TryGetValue(key, out var got))
         {
-            sum = default;
+            sum = 0;
             return false;
         }
 
@@ -441,7 +441,7 @@ public static class DictionaryArithmeticExtensions
     {
         if (!dict.TryMinusOrRemove(key, minuend))
         {
-            throw new KeyNotFoundException($"指定键：{key}在字典中不存在");
+            throw new KeyNotFoundException($"The key {key} not found in the dictionary");
         }
     }
 
@@ -458,7 +458,7 @@ public static class DictionaryArithmeticExtensions
     {
         if (!dict.TryMinusOrRemove(key, minuend, condition))
         {
-            throw new KeyNotFoundException($"指定键：{key}在字典中不存在");
+            throw new KeyNotFoundException($"The key {key} not found in the dictionary");
         }
     }
 

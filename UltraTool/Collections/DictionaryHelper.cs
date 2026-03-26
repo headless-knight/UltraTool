@@ -1,14 +1,11 @@
 ﻿#if NET7_0_OR_GREATER
 using System.Numerics;
 #endif
-using JetBrains.Annotations;
-
 namespace UltraTool.Collections;
 
 /// <summary>
 /// 字典帮助类
 /// </summary>
-[PublicAPI]
 public static class DictionaryHelper
 {
     /// <summary>
@@ -17,7 +14,6 @@ public static class DictionaryHelper
     /// <param name="dict">字典</param>
     /// <param name="addend">被加值</param>
     /// <returns>新字典</returns>
-    [Pure]
     public static Dictionary<TKey, int> PlusOf<TKey>(IReadOnlyDictionary<TKey, int> dict, int addend)
         where TKey : notnull
     {
@@ -39,7 +35,6 @@ public static class DictionaryHelper
     /// <param name="dict">字典</param>
     /// <param name="addend">被加值</param>
     /// <returns>新字典</returns>
-    [Pure]
     public static Dictionary<TKey, TValue> PlusOf<TKey, TValue, TOther>(IReadOnlyDictionary<TKey, TValue> dict,
         TOther addend) where TKey : notnull
         where TValue : IAdditionOperators<TValue, TOther, TValue>

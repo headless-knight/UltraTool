@@ -7,7 +7,6 @@ namespace UltraTool.Times;
 /// <summary>
 /// 日期时间帮助类
 /// </summary>
-[PublicAPI]
 public static class DateTimeHelper
 {
     #region 常量
@@ -21,12 +20,6 @@ public static class DateTimeHelper
     /// <summary>闰年总天数</summary>
     private const int DayAmountOfLeapYear = 366;
 
-    /// <summary>最小月份</summary>
-    private const int MinMonth = 1;
-
-    /// <summary>最大月份</summary>
-    private const int MaxMonth = 12;
-
     /// <summary>最大月份总天数</summary>
     private const int MaxMonthDayAmount = 31;
 
@@ -34,7 +27,17 @@ public static class DateTimeHelper
     private const int NoonHour = 12;
 
     /// <summary>
-    /// 一秒毫秒数
+    /// 最小月份
+    /// </summary>
+    public const int MinMonth = 1;
+
+    /// <summary>
+    /// 最大月份
+    /// </summary>
+    public const int MaxMonth = 12;
+
+    /// <summary>
+    /// 一秒钟毫秒数
     /// </summary>
     public const int OneSecondMilliseconds = 1000;
 
@@ -136,7 +139,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="seconds">秒级时间戳</param>
     /// <returns>本地时间</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DateTimeOffset FromUnixTimeSeconds(long seconds) =>
         DateTimeOffset.FromUnixTimeSeconds(seconds).ToLocalTime();
@@ -146,7 +148,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="milliseconds">毫秒级时间戳</param>
     /// <returns>本地时间</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DateTimeOffset FromUnixTimeMilliseconds(long milliseconds) =>
         DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).ToLocalTime();
@@ -156,7 +157,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="year">年份</param>
     /// <returns>是否闰年</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsLeapYear(int year) => DateTime.IsLeapYear(year);
 
@@ -166,31 +166,27 @@ public static class DateTimeHelper
     /// <param name="year">年份</param>
     /// <param name="month">月份</param>
     /// <returns>是否闰月</returns>
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsLeapMonth(int year, int month) => month == LeapMonth && IsLeapYear(year);
+    public static bool IsLeapMonth(int year, int month) => IsLeapYear(year) && month == LeapMonth;
 
     /// <summary>
     /// 获取指定年份有多少周
     /// </summary>
     /// <param name="year">年份</param>
     /// <returns>周数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetWeekAmount(int year) => GetWeekOfYear(year, MaxMonth, MaxMonthDayAmount);
 
     /// <summary>
-    /// 获取指定年月日为当年第几周
+    /// 计算指定日期位于当年第几周
     /// </summary>
     /// <param name="year">年份</param>
     /// <param name="month">月份</param>
     /// <param name="day">天数</param>
     /// <returns>周数</returns>
-    [Pure]
     public static int GetWeekOfYear(int year, int month, int day)
     {
         var end = new DateTime(year, month, day);
-        var calendar = CultureInfo.CurrentCulture.Calendar;
+        var calendar = CultureInfo.InvariantCulture.Calendar;
         // 周一作为每周第一天计算
         return calendar.GetWeekOfYear(end, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
     }
@@ -200,9 +196,8 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="year">年份</param>
     /// <returns>天数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetDayAmount(int year) => IsLeapYear(year) ? DayAmountOfYear : DayAmountOfLeapYear;
+    public static int GetDayAmount(int year) => IsLeapYear(year) ? DayAmountOfLeapYear : DayAmountOfYear;
 
     /// <summary>
     /// 获取指定年份指定月份有多少天
@@ -210,7 +205,6 @@ public static class DateTimeHelper
     /// <param name="year">年份</param>
     /// <param name="month">月份</param>
     /// <returns>天数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetDayAmount(int year, int month) => DateTime.DaysInMonth(year, month);
 
@@ -219,7 +213,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="hour">时</param>
     /// <returns>是否为上午</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAm(int hour) => hour < NoonHour;
 
@@ -228,7 +221,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="hour">时</param>
     /// <returns>是否为下午</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsPm(int hour) => hour >= NoonHour;
 

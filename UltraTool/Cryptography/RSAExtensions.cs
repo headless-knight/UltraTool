@@ -12,7 +12,6 @@ namespace UltraTool.Cryptography;
 /// <summary>
 /// RSA加密拓展类
 /// </summary>
-[PublicAPI]
 public static class RSAExtensions
 {
 #if !NET8_0_OR_GREATER
@@ -92,7 +91,7 @@ public static class RSAExtensions
     /// <param name="pool">数组池，默认为<see cref="ArrayPool{T}.Shared"/></param>
     /// <param name="clearArray">是否归还时清空数组，默认false</param>
     /// <returns>密文</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     public static PooledArray<byte> BlockEncryptPkcs1(this RSA rsa, ReadOnlySpan<byte> plaintext,
         ArrayPool<byte>? pool = null, bool clearArray = false)
     {
@@ -144,7 +143,7 @@ public static class RSAExtensions
 #else
             if (thisBlock.Length != buffer.Length)
             {
-                buffer = ArrayHelper.AllocateUninitializedArray<byte>(thisBlock.Length);
+                buffer = new byte[thisBlock.Length];
             }
 
             thisBlock.CopyTo(buffer);
@@ -165,7 +164,7 @@ public static class RSAExtensions
     /// <param name="pool">数组池，默认为<see cref="ArrayPool{T}.Shared"/></param>
     /// <param name="clearArray">是否归还时清空数组，默认false</param>
     /// <returns>明文</returns>
-    [Pure, MustDisposeResource]
+    [MustDisposeResource]
     public static PooledArray<byte> BlockDecryptPkcs1(this RSA rsa, ReadOnlySpan<byte> ciphertext,
         ArrayPool<byte>? pool = null, bool clearArray = false)
     {
@@ -219,7 +218,7 @@ public static class RSAExtensions
 #else
             if (thisBlock.Length != buffer.Length)
             {
-                buffer = ArrayHelper.AllocateUninitializedArray<byte>(thisBlock.Length);
+                buffer = new byte[thisBlock.Length];
             }
 
             thisBlock.CopyTo(buffer);

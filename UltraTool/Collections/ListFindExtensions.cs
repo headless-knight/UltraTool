@@ -9,7 +9,6 @@ namespace UltraTool.Collections;
 /// <summary>
 /// 列表查找扩展类
 /// </summary>
-[PublicAPI]
 public static class ListFindExtensions
 {
     #region 线性查找
@@ -21,10 +20,10 @@ public static class ListFindExtensions
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int IndexOf<T>(this IReadOnlyList<T> list, T value, IEqualityComparer<T>? comparer = null) =>
-        list.IndexOf(value, 0, list.Count, comparer);
+    public static int IndexOf<T, TList>(this TList list, T value, IEqualityComparer<T>? comparer = null)
+        where TList : IReadOnlyList<T> => list.IndexOf(value, 0, list.Count, comparer);
 
     /// <summary>
     /// 查找列表中第一个与传入值相等的索引
@@ -34,10 +33,10 @@ public static class ListFindExtensions
     /// <param name="index">起始索引</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int IndexOf<T>(this IReadOnlyList<T> list, T value, int index,
-        IEqualityComparer<T>? comparer = null) => list.IndexOf(value, index, list.Count - index, comparer);
+    public static int IndexOf<T, TList>(this TList list, T value, int index, IEqualityComparer<T>? comparer = null)
+        where TList : IReadOnlyList<T> => list.IndexOf(value, index, list.Count - index, comparer);
 
     /// <summary>
     /// 查找列表中第一个与传入值相等的索引
@@ -48,9 +47,9 @@ public static class ListFindExtensions
     /// <param name="count">查找数量</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int IndexOf<T>(this IReadOnlyList<T> list, T value, int index, int count,
-        IEqualityComparer<T>? comparer = null)
+    [CollectionAccess(CollectionAccessType.Read)]
+    public static int IndexOf<T, TList>(this TList list, T value, int index, int count,
+        IEqualityComparer<T>? comparer = null) where TList : IReadOnlyList<T>
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfNegative(count);
@@ -74,10 +73,10 @@ public static class ListFindExtensions
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int LastIndexOf<T>(this IReadOnlyList<T> list, T value, IEqualityComparer<T>? comparer = null) =>
-        list.LastIndexOf(value, list.Count - 1, list.Count, comparer);
+    public static int LastIndexOf<T, TList>(this TList list, T value, IEqualityComparer<T>? comparer = null)
+        where TList : IReadOnlyList<T> => list.LastIndexOf(value, list.Count - 1, list.Count, comparer);
 
     /// <summary>
     /// 从后往前查找列表中第一个与传入值相等的索引
@@ -87,10 +86,10 @@ public static class ListFindExtensions
     /// <param name="index">起始索引</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int LastIndexOf<T>(this IReadOnlyList<T> list, T value, int index,
-        IEqualityComparer<T>? comparer = null) => list.LastIndexOf(value, index, index + 1, comparer);
+    public static int LastIndexOf<T, TList>(this TList list, T value, int index, IEqualityComparer<T>? comparer = null)
+        where TList : IReadOnlyList<T> => list.LastIndexOf(value, index, index + 1, comparer);
 
     /// <summary>
     /// 从后往前查找列表中第一个与传入值相等的索引
@@ -101,9 +100,9 @@ public static class ListFindExtensions
     /// <param name="count">查找数量</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
-    public static int LastIndexOf<T>(this IReadOnlyList<T> list, T value, int index, int count,
-        IEqualityComparer<T>? comparer = null)
+    [CollectionAccess(CollectionAccessType.Read)]
+    public static int LastIndexOf<T, TList>(this TList list, T value, int index, int count,
+        IEqualityComparer<T>? comparer = null) where TList : IReadOnlyList<T>
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfNegative(count);
@@ -127,10 +126,10 @@ public static class ListFindExtensions
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IEnumerable<int> IndexesOf<T>(this IReadOnlyList<T> list, T value,
-        IEqualityComparer<T>? comparer = null) => list.IndexesOf(0, list.Count, value, comparer);
+    public static IEnumerable<int> IndexesOf<T, TList>(this TList list, T value, IEqualityComparer<T>? comparer = null)
+        where TList : IReadOnlyList<T> => list.IndexesOf(0, list.Count, value, comparer);
 
     /// <summary>
     /// 查找列表中所有与传入值相等的元素的索引
@@ -140,9 +139,10 @@ public static class ListFindExtensions
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
-    public static IEnumerable<int> IndexesOf<T>(this IReadOnlyList<T> list, int index, T value,
-        IEqualityComparer<T>? comparer = null) => list.IndexesOf(index, list.Count - index, value, comparer);
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    public static IEnumerable<int> IndexesOf<T, TList>(this TList list, int index, T value,
+        IEqualityComparer<T>? comparer = null) where TList : IReadOnlyList<T> =>
+        list.IndexesOf(index, list.Count - index, value, comparer);
 
     /// <summary>
     /// 查找列表中所有与传入值相等的元素的索引
@@ -153,9 +153,9 @@ public static class ListFindExtensions
     /// <param name="value">值</param>
     /// <param name="comparer">元素相等比较器，默认为null</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
-    public static IEnumerable<int> IndexesOf<T>(this IReadOnlyList<T> list, int index, int count, T value,
-        IEqualityComparer<T>? comparer = null)
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    public static IEnumerable<int> IndexesOf<T, TList>(this TList list, int index, int count, T value,
+        IEqualityComparer<T>? comparer = null) where TList : IReadOnlyList<T>
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
         ArgumentOutOfRangeHelper.ThrowIfNegative(count);
@@ -180,7 +180,7 @@ public static class ListFindExtensions
     /// <param name="list">列表</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FindIndex<T>(this IReadOnlyList<T> list, Predicate<T> match) =>
         list.FindIndex(0, list.Count, match);
@@ -192,7 +192,7 @@ public static class ListFindExtensions
     /// <param name="startIndex">起始索引</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FindIndex<T>(this IReadOnlyList<T> list, int startIndex, Predicate<T> match) =>
         list.FindIndex(startIndex, list.Count - startIndex, match);
@@ -205,7 +205,7 @@ public static class ListFindExtensions
     /// <param name="count">查找数量</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static int FindIndex<T>(this IReadOnlyList<T> list, int startIndex, int count, Predicate<T> match)
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(startIndex);
@@ -228,7 +228,7 @@ public static class ListFindExtensions
     /// <param name="list">列表</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FindLastIndex<T>(this IReadOnlyList<T> list, Predicate<T> match) =>
         list.FindLastIndex(list.Count - 1, list.Count, match);
@@ -240,7 +240,7 @@ public static class ListFindExtensions
     /// <param name="startIndex">起始索引</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FindLastIndex<T>(this IReadOnlyList<T> list, int startIndex, Predicate<T> match) =>
         list.FindLastIndex(startIndex, startIndex + 1, match);
@@ -275,7 +275,7 @@ public static class ListFindExtensions
     /// <param name="list">列表</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<int> FindIndexes<T>(this IReadOnlyList<T> list, Predicate<T> match) =>
         list.FindIndexes(0, list.Count, match);
@@ -287,7 +287,7 @@ public static class ListFindExtensions
     /// <param name="startIndex">起始索引</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<int> FindIndexes<T>(this IReadOnlyList<T> list, int startIndex, Predicate<T> match) =>
         list.FindIndexes(startIndex, list.Count - startIndex, match);
@@ -300,7 +300,7 @@ public static class ListFindExtensions
     /// <param name="count">查找数量</param>
     /// <param name="match">条件委托</param>
     /// <returns>索引序列</returns>
-    [Pure, LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
+    [LinqTunnel, CollectionAccess(CollectionAccessType.Read)]
     public static IEnumerable<int> FindIndexes<T>(this IReadOnlyList<T> list, int startIndex, int count,
         Predicate<T> match)
     {
@@ -323,7 +323,7 @@ public static class ListFindExtensions
     /// <param name="match">条件委托</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryFindFirst<T>(this IReadOnlyList<T> list, Predicate<T> match,
         [MaybeNullWhen(false)] out T found) => list.TryFindFirst(0, list.Count, match, out found);
@@ -336,7 +336,7 @@ public static class ListFindExtensions
     /// <param name="match">条件委托</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryFindFirst<T>(this IReadOnlyList<T> list, int startIndex, Predicate<T> match,
         [MaybeNullWhen(false)] out T found) => list.TryFindFirst(startIndex, list.Count - startIndex, match, out found);
@@ -350,7 +350,7 @@ public static class ListFindExtensions
     /// <param name="match">条件委托</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static bool TryFindFirst<T>(this IReadOnlyList<T> list, int startIndex, int count, Predicate<T> match,
         [MaybeNullWhen(false)] out T found)
     {
@@ -384,7 +384,7 @@ public static class ListFindExtensions
     /// <param name="match">匹配条件，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryFindLast<T>(this IReadOnlyList<T> list, Predicate<T> match,
         [MaybeNullWhen(false)] out T found) => list.TryFindLast(list.Count - 1, list.Count, match, out found);
@@ -397,7 +397,7 @@ public static class ListFindExtensions
     /// <param name="match">匹配条件，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryFindLast<T>(this IReadOnlyList<T> list, int startIndex, Predicate<T> match,
         [MaybeNullWhen(false)] out T found) => list.TryFindLast(startIndex, startIndex + 1, match, out found);
@@ -411,7 +411,7 @@ public static class ListFindExtensions
     /// <param name="match">匹配条件，入参(遍历元素)</param>
     /// <param name="found">找到的元素</param>
     /// <returns>是否成功找到</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static bool TryFindLast<T>(this IReadOnlyList<T> list, int startIndex, int count, Predicate<T> match,
         [MaybeNullWhen(false)] out T found)
     {
@@ -449,7 +449,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparison">元素比较表达式</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BinarySearch<T, TList>(this TList list, T value, Comparison<T> comparison)
         where TList : IReadOnlyList<T> => list.BinarySearch(0, list.Count, value, comparison);
@@ -462,7 +462,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparison">元素比较表达式</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BinarySearch<T, TList>(this TList list, int index, T value, Comparison<T> comparison)
         where TList : IReadOnlyList<T> => list.BinarySearch(index, list.Count - index, value, comparison);
@@ -476,7 +476,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparison">元素比较表达式</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static int BinarySearch<T, TList>(this TList list, int index, int count, T value, Comparison<T> comparison)
         where TList : IReadOnlyList<T>
     {
@@ -495,7 +495,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparer">元素比较器，默认为null</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BinarySearch<T, TList>(this TList list, T value, IComparer<T>? comparer = null)
         where TList : IReadOnlyList<T> => list.BinarySearch(0, list.Count, value, comparer);
@@ -508,7 +508,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparer">元素比较器，默认为null</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BinarySearch<T, TList>(this TList list, int index, T value, IComparer<T>? comparer = null)
         where TList : IReadOnlyList<T> => list.BinarySearch(index, list.Count - index, value, comparer);
@@ -522,7 +522,7 @@ public static class ListFindExtensions
     /// <param name="value">查找值</param>
     /// <param name="comparer">元素比较器，默认为null</param>
     /// <returns>查找值索引</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     public static int BinarySearch<T, TList>(this TList list, int index, int count, T value,
         IComparer<T>? comparer = null) where TList : IReadOnlyList<T>
     {
