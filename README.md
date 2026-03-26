@@ -189,6 +189,163 @@ string oddHex = "ABC";
 byte[] fromOdd = ConvertHelper.FromHexString(oddHex);   // 自动补0 → [0x0A, 0xBC]
 ```
 
+### 异常构建器 - 优雅的错误收集与抛出
+
+```csharp
+using UltraTool;
+
+// 基本用法：收集多个错误后统一抛出
+var builder = ExceptionBuilder.CreateDefault("参数校验失败");
+if (string.IsNullOrEmpty(name))
+    builder.AddError("名称不能为空");
+if (age < 0)
+    builder.AddError("年龄不能为负数");
+
+builder.ThrowIfHasError(); // 有错误时抛出包含所有错误信息的异常
+
+// 使用 using 语法：作用域结束时自动检查并抛出
+using (var checker = ExceptionBuilder.CreateDefault("数据校验"))
+{
+    checker.AddError("字段A不合法");
+    checker.AddError("字段B超出范围");
+} // Dispose 时自动抛出异常
+
+// 自定义异常类型
+var custom = ExceptionBuilder.Create<ArgumentException>("参数错误");
+custom.AddError("参数X无效");
+custom.ThrowIfHasError(); // 抛出 ArgumentException
+
+// 值类型版本（零堆分配）
+var valueBuilder = ValueExceptionBuilder.CreateDefault("校验");
+valueBuilder.AddError("错误信息");
+if (valueBuilder.HasError)
+{
+    Exception ex = valueBuilder.Build(); // 手动构建异常对象
+}
+```
+
+### 池化数组 - 基于 ArrayPool 的高性能定长数组
+
+```csharp
+using UltraTool;
+
+// 基本用法：从池中租借固定长度数组，using 结束自动归还
+using var array = PooledArray.Get<int>(100);
+array[0] = 42;
+array[50] = 99;
+Console.WriteLine(array.Length);    // 100
+Console.WriteLine(array.Capacity);  // >= 100（池分配的实际容量）
+
+// 从已有数据创建
+byte[] source = { 1, 2, 3, 4, 5 };
+using var fromSpan = PooledArray.From<byte>(source);
+Console.WriteLine(fromSpan[2]);     // 3
+
+// 获取清零的池化数组
+using var cleared = PooledArray.GetCleared<int>(50);
+Console.WriteLine(cleared[0]);      // 0（已清零）
+
+// 丰富的访问方式
+using var data = PooledArray.Get<int>(10);
+Span<int> span = data.Span;                    // 获取 Span
+ReadOnlySpan<int> roSpan = data.ReadOnlySpan;  // 获取只读 Span
+Memory<int> memory = data.Memory;              // 获取 Memory
+int[] rawArray = data.ToArray();               // 拷贝为普通数组
+
+// 查找与排序
+using var nums = PooledArray.From<int>(new[] { 5, 3, 1, 4, 2 });
+nums.Sort();                                   // 排序 → [1, 2, 3, 4, 5]
+nums.Reverse();                                // 反转 → [5, 4, 3, 2, 1]
+int idx = nums.IndexOf(3);                     // 查找元素索引
+int found = nums.Find(x => x > 3) ?? -1;      // 条件查找
+
+// 从 LINQ 序列直接转换
+using var pooled = Enumerable.Range(0, 1000).ToPooledArray();
+```
+
+### 池化动态数组 - 基于 ArrayPool 的高性能可变长数组
+
+```csharp
+using UltraTool;
+
+// 基本用法：类似 List<T>，但底层使用 ArrayPool
+using var list = new PooledDynamicArray<string>(capacity: 16);
+list.Add("Hello");
+list.Add("World");
+list.AddRange(new[] { "Foo", "Bar" });
+Console.WriteLine(list.Length);     // 4
+Console.WriteLine(list[1]);        // "World"
+
+// 从已有集合初始化
+using var fromCollection = new PooledDynamicArray<int>(new[] { 1, 2, 3, 4, 5 });
+Console.WriteLine(fromCollection.Length); // 5
+
+// 插入与删除
+using var dynamic = new PooledDynamicArray<int>();
+dynamic.AddRange(new[] { 10, 20, 30, 40, 50 });
+dynamic.Insert(2, 25);             // [10, 20, 25, 30, 40, 50]
+dynamic.RemoveAt(0);               // [20, 25, 30, 40, 50]
+dynamic.Remove(40);                // [20, 25, 30, 50]
+dynamic.RemoveAll(x => x > 28);   // [20, 25]
+
+// 批量操作
+using var batch = new PooledDynamicArray<int>(8);
+batch.AddRange(new[] { 3, 1, 4, 1, 5, 9 });
+batch.InsertRange(2, new[] { 100, 200 });  // [3, 1, 100, 200, 4, 1, 5, 9]
+batch.RemoveRange(1, 3);                   // [3, 4, 1, 5, 9]
+
+// 获取 Span 进行高性能操作
+using var spanArray = new PooledDynamicArray<int>(new[] { 5, 3, 1, 4, 2 });
+Span<int> span = spanArray.GetSpan();
+ReadOnlySpan<int> roSpan = spanArray.GetReadOnlySpan();
+spanArray.Reverse();                // [2, 4, 1, 3, 5]
+```
+
+### 值类型秒表 - 零分配的高精度计时器
+
+```csharp
+using UltraTool;
+
+// 基本用法：创建并启动秒表
+var sw = ValueStopwatch.StartNew();
+// ... 执行耗时操作 ...
+Thread.Sleep(100);
+Console.WriteLine(sw.ElapsedMilliseconds); // ≈ 100
+Console.WriteLine(sw.Elapsed);             // TimeSpan 对象
+
+// 停止与继续
+var sw2 = ValueStopwatch.StartNew();
+Thread.Sleep(50);
+sw2.Stop();                                // 停止计时
+long ms1 = sw2.ElapsedMilliseconds;       // ≈ 50
+Thread.Sleep(100);                         // 停止期间不计时
+Console.WriteLine(sw2.ElapsedMilliseconds == ms1); // true
+sw2.Start();                               // 继续计时（累加）
+Thread.Sleep(50);
+sw2.Stop();
+Console.WriteLine(sw2.ElapsedMilliseconds); // ≈ 100
+
+// 重置与重启
+var sw3 = ValueStopwatch.StartNew();
+Thread.Sleep(50);
+sw3.Restart();                             // 重置并重新开始计时
+Thread.Sleep(30);
+Console.WriteLine(sw3.ElapsedMilliseconds); // ≈ 30（仅计算 Restart 后的时间）
+
+sw3.Reset();                               // 完全重置，秒表停止
+Console.WriteLine(sw3.IsRunning);          // false
+Console.WriteLine(sw3.ElapsedMilliseconds); // 0
+
+// 静态工具方法：计算两个时间戳之间的耗时
+long start = ValueStopwatch.GetTimestamp();
+// ... 执行操作 ...
+TimeSpan elapsed = ValueStopwatch.GetElapsedTime(start);
+
+// 带初始偏移量启动
+var sw4 = ValueStopwatch.StartNew(TimeSpan.FromSeconds(5));
+Console.WriteLine(sw4.ElapsedMilliseconds); // ≈ 5000（从5秒开始计时）
+```
+
 ## 📚 API 参考手册
 
 ### 集合扩展 (`UltraTool.Collections`)
@@ -303,9 +460,72 @@ byte[] fromOdd = ConvertHelper.FromHexString(oddHex);   // 自动补0 → [0x0A,
 - `FromHexString(string)` - 十六进制字符串转字节数组
 - 支持大小写控制和奇数字符串自动补0
 
+### 异常构建器 (`UltraTool`)
+
+#### ExceptionBuilder（引用类型）
+- `ExceptionBuilder.CreateDefault(title?)` - 创建默认异常构建器
+- `ExceptionBuilder.Create<T>(title?, creator?)` - 创建指定异常类型的构建器
+- `HasError` - 是否有错误信息
+- `AddError(string)` - 添加错误信息
+- `GetErrorString()` - 获取错误信息字符串
+- `ThrowIfHasError()` - 有错误时抛出异常
+- `Build()` - 构建异常对象
+- `Dispose()` - 释放时自动检查并抛出异常
+
+#### ValueExceptionBuilder（值类型，零堆分配）
+- `ValueExceptionBuilder.CreateDefault(title?)` - 创建默认值类型异常构建器
+- `ValueExceptionBuilder.Create<T>(title?, creator?)` - 创建指定异常类型的值类型构建器
+- API 与引用类型版本一致
+
+### 池化数组 (`UltraTool`)
+
+#### PooledArray（静态工厂）
+- `PooledArray.Get<T>(length)` - 从池中租借指定长度数组
+- `PooledArray.GetCleared<T>(length)` - 租借并清零
+- `PooledArray.From<T>(span)` - 从 Span 拷贝创建
+- `ToPooledArray<T>()` - IEnumerable 扩展方法，序列转池化数组
+
+#### PooledArray\<T\>（实例方法）
+- `Length` / `Capacity` / `IsEmpty` - 基础属性
+- `Span` / `ReadOnlySpan` / `Memory` / `ReadOnlyMemory` - 内存访问
+- `IndexOf(T)` / `LastIndexOf(T)` / `Contains(T)` - 查找
+- `Find(Predicate)` / `FindAll(Predicate)` / `FindIndex(Predicate)` - 条件查找
+- `BinarySearch(T)` - 二分查找
+- `Sort()` / `Reverse()` / `Swap(int, int)` - 排序与操作
+- `Slice(start, length)` / `GetRange(start, length)` - 切片
+- `CopyTo(T[])` / `ToArray()` - 拷贝
+- `Dispose()` - 归还数组到池
+
+### 池化动态数组 (`UltraTool`)
+
+#### PooledDynamicArray\<T\>
+- `Length` / `Capacity` / `IsEmpty` - 基础属性
+- `Add(T)` / `AddRange(IEnumerable)` / `AddRange(ReadOnlySpan)` - 添加元素
+- `Insert(int, T)` / `InsertRange(int, IEnumerable)` - 插入元素
+- `Remove(T)` / `RemoveAt(int)` / `RemoveRange(int, int)` / `RemoveAll(Predicate)` - 删除元素
+- `GetSpan()` / `GetReadOnlySpan()` / `GetMemory()` / `GetReadOnlyMemory()` - 内存访问
+- `IndexOf(T)` / `LastIndexOf(T)` / `Find(Predicate)` / `BinarySearch(T)` - 查找
+- `Reverse()` / `EnsureCapacity(int)` / `Clear()` - 操作
+- `Dispose()` - 归还数组到池
+
+### 值类型秒表 (`UltraTool`)
+
+#### ValueStopwatch
+- `ValueStopwatch.StartNew()` - 创建并启动秒表
+- `ValueStopwatch.StartNew(TimeSpan)` - 带初始偏移量启动
+- `ValueStopwatch.GetTimestamp()` - 获取当前时间戳
+- `ValueStopwatch.GetElapsedTime(long)` - 计算时间戳至今的耗时
+- `ValueStopwatch.GetElapsedTime(long, long)` - 计算两个时间戳之间的耗时
+- `ValueStopwatch.FromTimestamp(long, long)` - 从时间戳构造已停止的秒表
+- `IsRunning` - 秒表是否在运行
+- `Elapsed` / `ElapsedTicks` / `ElapsedMilliseconds` - 获取耗时
+- `Start()` / `Stop()` / `Restart()` / `Reset()` - 控制秒表
+
 ## 🔧 性能优化特性
 
-- **池化内存**：使用 `PooledArray<T>` 减少内存分配
+- **池化内存**：使用 `PooledArray<T>` 和 `PooledDynamicArray<T>` 减少内存分配，底层基于 `ArrayPool<T>`
+- **值类型计时**：`ValueStopwatch` 为零堆分配的高精度计时器，替代 `System.Diagnostics.Stopwatch`
+- **值类型异常构建**：`ValueExceptionBuilder<T>` 在栈上运行，避免堆分配
 - **内联优化**：大量使用 `MethodImplOptions.AggressiveInlining`
 - **跨度操作**：充分利用 `Span<T>` 和 `ReadOnlySpan<T>`
 - **非枚举计数**：优先使用 `TryGetNonEnumeratedCount()` 避免枚举

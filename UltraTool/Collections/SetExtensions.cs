@@ -34,6 +34,7 @@ public static class SetExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int AddRange<T>(this ISet<T> set, [InstantHandle] IEnumerable<T> range) => range.Count(set.Add);
 
+#if !NET5_0_OR_GREATER
     /// <summary>
     /// 将集合转化为只读集合
     /// </summary>
@@ -41,20 +42,9 @@ public static class SetExtensions
     /// <returns>只读集合</returns>
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static
-#if NET5_0_OR_GREATER
-        IReadOnlySet<T>
-#else
-        IReadOnlyCollection<T>
+    public static IReadOnlyCollection<T> AsReadOnly<T>(this ISet<T> set) =>
+        set as IReadOnlyCollection<T> ?? new ReadOnlySetBridge<T>(set);
 #endif
-        AsReadOnly<T>(this ISet<T> set) =>
-        set as
-#if NET5_0_OR_GREATER
-            IReadOnlySet<T>
-#else
-            IReadOnlyCollection<T>
-#endif
-        ?? new ReadOnlySetBridge<T>(set);
 
     /// <summary>只读集合桥接</summary>
     private sealed class ReadOnlySetBridge<T>(ISet<T> set)

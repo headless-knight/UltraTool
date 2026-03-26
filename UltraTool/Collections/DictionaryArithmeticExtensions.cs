@@ -11,7 +11,6 @@ namespace UltraTool.Collections;
 /// <summary>
 /// 字典算术扩展类
 /// </summary>
-[PublicAPI]
 public static class DictionaryArithmeticExtensions
 {
     #region 加法操作
@@ -296,6 +295,291 @@ public static class DictionaryArithmeticExtensions
     #endregion
 
     #region 减法操作
+
+    /// <summary>
+    /// 将字典中所有键的值减去传入值并保存
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="minuend">被减值</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void AllMinus<TKey>(this IDictionary<TKey, int> dict, int minuend)
+    {
+        if (dict is not { Count: > 0 }) return;
+
+        foreach (var key in dict.Keys)
+        {
+            dict.Minus(key, minuend);
+        }
+    }
+
+    /// <summary>
+    /// 将字典中指定键的值减去传入值并保存
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <returns>差值</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Minus<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend) => dict[key] -= minuend;
+
+    /// <summary>
+    /// 尝试将字典中指定键的值减去传入值并保存
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <returns>是否操作成功</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static bool TryMinus<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend)
+    {
+        if (!dict.TryGetValue(key, out var got)) return false;
+
+        dict[key] = got - minuend;
+        return true;
+    }
+
+    /// <summary>
+    /// 尝试将字典中指定键的值减去传入值并保存
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <param name="diff">差值</param>
+    /// <returns>是否操作成功</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static bool TryMinus<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend, out int diff)
+    {
+        if (!dict.TryGetValue(key, out var got))
+        {
+            diff = default;
+            return false;
+        }
+
+        dict[key] = diff = got - minuend;
+        return true;
+    }
+
+    /// <summary>
+    /// 尝试批量将字典中指定键的值减去传入值并保存
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="range">被减键值对序列</param>
+    /// <returns>成功操作数量</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static int TryMinusRange<TKey>(this IDictionary<TKey, int> dict,
+        [InstantHandle] IEnumerable<KeyValuePair<TKey, int>> range)
+    {
+        if (range.TryGetNonEnumeratedCount(out var size) && size <= 0)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var (key, value) in range)
+        {
+            if (dict.TryMinus(key, value)) count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// 将字典中所有键的值减去传入值并保存，若计算结果小于或等于0则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="minuend">被减值</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void AllMinusOrRemove<TKey>(this IDictionary<TKey, int> dict, int minuend)
+    {
+        if (dict is not { Count: > 0 }) return;
+
+        foreach (var key in dict.Keys)
+        {
+            dict.MinusOrRemove(key, minuend);
+        }
+    }
+
+    /// <summary>
+    /// 将字典中所有键的值减去传入值并保存，若计算结果满足条件则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="minuend">被减值</param>
+    /// <param name="condition">删除条件</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void AllMinusOrRemove<TKey>(this IDictionary<TKey, int> dict, int minuend,
+        Func<int, bool> condition)
+    {
+        if (dict is not { Count: > 0 }) return;
+
+        foreach (var key in dict.Keys)
+        {
+            dict.MinusOrRemove(key, minuend, condition);
+        }
+    }
+
+    /// <summary>
+    /// 将字典中指定键的值减去传入值并保存，若计算结果小于或等于0则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void MinusOrRemove<TKey>(this IDictionary<TKey, int> dict, TKey key, int minuend)
+    {
+        if (!dict.TryMinusOrRemove(key, minuend))
+        {
+            throw new KeyNotFoundException($"The key {key} not found in the dictionary");
+        }
+    }
+
+    /// <summary>
+    /// 将字典中指定键的值减去传入值并保存，若计算结果满足条件则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <param name="condition">删除条件</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static void MinusOrRemove<TKey>(this IDictionary<TKey, int> dict, TKey key, int minuend,
+        Func<int, bool> condition)
+    {
+        if (!dict.TryMinusOrRemove(key, minuend, condition))
+        {
+            throw new KeyNotFoundException($"The key {key} not found in the dictionary");
+        }
+    }
+
+    /// <summary>
+    /// 将字典中指定键的值减去传入值并保存，若计算结果小于或等于0则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <returns>是否操作成功</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static bool TryMinusOrRemove<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend)
+    {
+        if (!dict.TryGetValue(key, out var got)) return false;
+
+        var result = got - minuend;
+        if (result <= 0)
+        {
+            dict.Remove(key);
+            return true;
+        }
+
+        dict[key] = result;
+        return true;
+    }
+
+    /// <summary>
+    /// 将字典中指定键的值减去传入值并保存，若计算结果满足条件则删除该键
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">被减值</param>
+    /// <param name="condition">删除条件</param>
+    /// <returns>是否操作成功</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static bool TryMinusOrRemove<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend, Func<int, bool> condition)
+    {
+        if (!dict.TryGetValue(key, out var got)) return false;
+
+        var result = got - minuend;
+        if (condition.Invoke(result))
+        {
+            dict.Remove(key);
+            return true;
+        }
+
+        dict[key] = result;
+        return true;
+    }
+
+    /// <summary>
+    /// 遍历键值集合中的键值，对字典中对应键值数据进行减法计算保存，若计算结果小于或等于0则删除
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="range">被减{键值对序列</param>
+    /// <returns>成功操作数量</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static int TryMinusOrRemoveRange<TKey>(this IDictionary<TKey, int> dict,
+        [InstantHandle] IEnumerable<KeyValuePair<TKey, int>> range)
+    {
+        if (range.TryGetNonEnumeratedCount(out var size) && size <= 0)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var (key, value) in range)
+        {
+            if (dict.TryMinusOrRemove(key, value)) count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// 遍历键值集合中的键值，对字典中对应键值数据进行减法计算保存，若计算结果满足条件则删除
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="range">被减键值对序列</param>
+    /// <param name="condition">删除条件</param>
+    /// <returns>成功操作数量</returns>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent)]
+    public static int TryMinusOrRemoveRange<TKey>(this IDictionary<TKey, int> dict,
+        [InstantHandle] IEnumerable<KeyValuePair<TKey, int>> range, Func<int, bool> condition)
+    {
+        if (range.TryGetNonEnumeratedCount(out var size) && size <= 0)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var (key, value) in range)
+        {
+            if (dict.TryMinusOrRemove(key, value, condition)) count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// 从字典减去指定值或添加指定值的负值
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="key">键</param>
+    /// <param name="minuend">值</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent | CollectionAccessType.UpdatedContent)]
+    public static int MinusOrAddNegative<TKey>(this IDictionary<TKey, int> dict, TKey key,
+        int minuend)
+    {
+        if (dict.TryMinus(key, minuend, out var diff)) return diff;
+
+        return dict[key] = -minuend;
+    }
+
+    /// <summary>
+    /// 批量从字典减去指定值或添加指定值的负值
+    /// </summary>
+    /// <param name="dict">字典</param>
+    /// <param name="range">键值对序列</param>
+    [CollectionAccess(CollectionAccessType.ModifyExistingContent | CollectionAccessType.UpdatedContent)]
+    public static void MinusOrAddNegativeRange<TKey>(this IDictionary<TKey, int> dict,
+        IEnumerable<KeyValuePair<TKey, int>> range)
+    {
+        foreach (var (key, value) in range)
+        {
+            dict.MinusOrAddNegative(key, value);
+        }
+    }
 
 #if NET7_0_OR_GREATER
     /// <summary>

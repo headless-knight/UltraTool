@@ -9,7 +9,6 @@ namespace UltraTool.Helpers;
 /// <summary>
 /// 转换帮助类
 /// </summary>
-[PublicAPI]
 public static class ConvertHelper
 {
     #region 十六进制
