@@ -8,6 +8,35 @@ namespace UltraTool.Helpers;
 internal static class ArgumentOutOfRangeHelper
 {
     /// <summary>
+    /// 如果值等于0则抛出异常
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="paramName">参数名</param>
+    public static void ThrowIfZero(int value,
+#if NETCOREAPP3_0_OR_GREATER
+        [CallerArgumentExpression(nameof(value))]
+#endif
+        string? paramName = null) => ThrowIfEqual(value, 0, paramName);
+
+    /// <summary>
+    /// 如果值等于目标值则抛出异常
+    /// </summary>
+    /// <param name="value">值</param>
+    /// <param name="other">目标值</param>
+    /// <param name="paramName">参数名</param>
+    public static void ThrowIfEqual<T>(T value, T other,
+#if NETCOREAPP3_0_OR_GREATER
+        [CallerArgumentExpression(nameof(value))]
+#endif
+        string? paramName = null) where T : IEquatable<T>
+    {
+        if (value.Equals(other))
+        {
+            throw new ArgumentOutOfRangeException(paramName, value, $"The value is equals {other}");
+        }
+    }
+
+    /// <summary>
     /// 如果值小于0则抛出异常
     /// </summary>
     /// <param name="value">值</param>

@@ -2,7 +2,6 @@
 using System.Numerics;
 #endif
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 using UltraTool.Helpers;
 
 namespace UltraTool.Numerics;
@@ -10,7 +9,6 @@ namespace UltraTool.Numerics;
 /// <summary>
 /// 整型拓展类
 /// </summary>
-[PublicAPI]
 public static class IntegerExtensions
 {
     /// <summary>
@@ -18,7 +16,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>是否为奇数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOdd(this int number) => (number & 1) == 1;
 
@@ -27,7 +24,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>是否为偶数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsEven(this int number) => (number & 1) == 0;
 
@@ -36,7 +32,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>1的个数</returns>
-    [Pure]
     public static int GetBitOneCount(this int number)
     {
         var count = 0;
@@ -55,7 +50,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>是否为1</returns>
-    [Pure]
     public static bool IsBitOne(this int number, int index)
     {
         ArgumentOutOfRangeHelper.ThrowIfNegative(index);
@@ -69,7 +63,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>新值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CalcSetBitOne(this int number, int index)
     {
@@ -83,7 +76,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>新值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CalcSetBitZero(this int number, int index)
     {
@@ -97,7 +89,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>是否为奇数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOdd<T>(this T number) where T : IBinaryInteger<T> => (number & T.One) == T.One;
 
@@ -106,7 +97,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>是否为偶数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsEven<T>(this T number) where T : IBinaryInteger<T> => (number & T.One) == T.Zero;
 
@@ -115,7 +105,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>二进制位数</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetBitCount<T>(this T number) where T : IBinaryInteger<T> =>
         number.GetByteCount() * 8;
@@ -125,7 +114,6 @@ public static class IntegerExtensions
     /// </summary>
     /// <param name="number">整数</param>
     /// <returns>1的个数</returns>
-    [Pure]
     public static int GetBitOneCount<T>(this T number) where T : IBinaryInteger<T>
     {
         var count = 0;
@@ -144,7 +132,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>是否为1</returns>
-    [Pure]
     public static bool IsBitOne<T>(this T number, int index) where T : IBinaryInteger<T>
     {
         var count = number.GetBitCount();
@@ -159,7 +146,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>新值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T CalcSetBitOne<T>(this T number, int index) where T : IBinaryInteger<T>
     {
@@ -173,7 +159,6 @@ public static class IntegerExtensions
     /// <param name="number">整数</param>
     /// <param name="index">位索引</param>
     /// <returns>新值</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T CalcSetBitZero<T>(this T number, int index) where T : IBinaryInteger<T>
     {

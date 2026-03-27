@@ -53,6 +53,92 @@ var mergedDict = numbers.ToMergedDictionary(x => x % 2, x => x); // 合并字典
 var nestedDict = strings.ToNestedDictionary(s => s.Length, s => s[0]); // 嵌套字典
 ```
 
+### 列表操作 - 安全的索引访问和便捷的增删操作
+
+```csharp
+using UltraTool.Collections;
+
+var list = new List<int> { 10, 20, 30, 40, 50 };
+
+// 安全索引访问
+bool valid = list.IsValidIndex(2);                  // 索引是否合法 → true
+bool invalid = list.IsValidIndex(10);                // 索引是否合法 → false
+bool got = list.TryGetValue(1, out var val);         // 尝试获取值 → val = 20
+int? defVal = list.GetValueOrDefault(99);            // 索引越界返回默认值 → null
+int nearest = list.GetNearestOrDefault(100, -1);     // 越界返回最近值 → 50
+
+// 首尾元素操作
+int first = list.RemoveFirst();                      // 移除并返回第一个元素 → 10
+int last = list.RemoveLast();                        // 移除并返回最后一个元素 → 50
+bool removed = list.TryRemoveFirst(x => x > 25);    // 条件移除第一个匹配元素 → true
+bool removedLast = list.TryRemoveLast(out var item); // 尝试移除最后一个元素
+
+// 批量与工具操作
+list.AddRange(new[] { 60, 70, 80 });                 // 批量添加元素
+list.Swap(0, 2);                                     // 交换两个索引位置的元素
+list.Shuffle();                                      // 随机打乱列表顺序
+
+// 空值安全
+IReadOnlyList<int>? nullList = null;
+var safe = nullList.EmptyIfNull();                   // null时返回空列表
+
+// 类型转换
+var readOnly = list.AsReadOnly();                    // 包装为只读列表
+var array = list.AsOrToArray();                      // 转换或强转为数组
+```
+
+### 字典操作 - 灵活的键值管理和嵌套字典支持
+
+```csharp
+using UltraTool.Collections;
+
+var dict = new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 };
+
+// 获取或添加
+int val1 = dict.GetOrAdd("c", 3);                    // 键不存在则添加 → 3
+int val2 = dict.GetOrAdd("a", 99);                   // 键已存在则返回原值 → 1
+int val3 = dict.GetOrAdd("d", key => key.Length);    // 通过委托生成值 → 1
+
+// 获取或创建（值类型需有无参构造函数）
+var listDict = new Dictionary<string, List<int>>();
+var items = listDict.GetOrCreate("key");             // 键不存在则 new List<int>()
+items.Add(42);
+
+// Put：设置值并返回旧值
+int? old = dict.Put("a", 100);                       // 返回旧值 → 1
+
+// 添加或更新
+dict.AddOrUpdate("a", 10, (key, existed) => existed + 10); // 已存在则更新 → 110
+dict.AddOrUpdate("x", 5, (key, existed) => existed + 5);  // 不存在则添加 → 5
+
+// 批量操作
+var extra = new Dictionary<string, int> { ["e"] = 5, ["f"] = 6 };
+dict.AddRange(extra);                                // 批量添加（键重复会抛异常）
+int added = dict.TryAddRange(extra);                 // 尝试批量添加，返回成功数量
+dict.PutAll(extra);                                  // 批量设置（覆盖已有键）
+
+// 批量删除
+int removedCount = dict.RemoveKeys(new[] { "a", "b", "z" }); // 返回成功删除数量
+
+// 嵌套字典操作
+var nested = new Dictionary<string, Dictionary<int, string>>
+{
+    ["group1"] = new() { [1] = "Alice", [2] = "Bob" },
+    ["group2"] = new() { [3] = "Charlie" }
+};
+bool found = nested.TryGetNestedValue("group1", 1, out var name); // → "Alice"
+var allKeys = nested.NestedKeys().ToList();          // → [("group1",1), ("group1",2), ("group2",3)]
+var allValues = nested.NestedValues().ToList();      // → ["Alice", "Bob", "Charlie"]
+
+// 交换与打乱
+dict.Swap("e", "f");                                 // 交换两个键对应的值
+dict.Shuffle();                                      // 随机打乱字典值的顺序
+
+// 空值安全
+IReadOnlyDictionary<string, int>? nullDict = null;
+var safeDict = nullDict.EmptyIfNull();               // null时返回空字典
+```
+
 ### 字符串操作 - 安全的空值处理和编码转换
 
 ```csharp
@@ -92,8 +178,9 @@ int clearBit = number.CalcSetBitZero(1);    // 清除第1位 → 40
 
 // 浮点数操作
 float value = 3.14f;
-bool isNaN = float.IsNaN(value);
-bool isInfinity = float.IsInfinity(value);
+bool isApprox = value.ApproximateTo(3.14f);       // 判断是否近似相等（默认误差0.0001）
+bool isZero = (0.00001f).ApproximateToZero();     // 判断是否近似等于0 → true
+bool custom = value.ApproximateTo(3.15f, 0.02f);  // 自定义误差范围
 ```
 
 ### 时间日期操作 - 丰富的时间处理功能
@@ -379,6 +466,36 @@ Console.WriteLine(sw4.ElapsedMilliseconds); // ≈ 5000（从5秒开始计时）
 - `ToMergedDictionary<T>()` - 转换为合并字典（重复键合并）
 - `ToNestedDictionary<T>()` - 转换为嵌套字典
 - `ToNestedReadOnlyDictionary<T>()` - 转换为只读嵌套字典
+
+#### 列表扩展
+- `EmptyIfNull<T>()` - null时返回空列表
+- `IsValidIndex<T>(int)` - 判断索引是否合法
+- `TryGetValue<T>(int, out T)` - 安全获取指定索引值
+- `GetValueOrDefault<T>(int)` - 获取值或返回默认值
+- `GetNearestOrDefault<T>(int)` - 越界时返回最近位置的值
+- `AddRange<T>(IEnumerable<T>)` - 批量添加元素
+- `RemoveFirst<T>()` / `RemoveLast<T>()` - 移除首尾元素
+- `TryRemoveFirst<T>()` / `TryRemoveLast<T>()` - 安全移除首尾元素
+- `Swap<T>(int, int)` - 交换两个索引位置的元素
+- `Shuffle<T>()` - 随机打乱列表顺序
+- `AsReadOnly<T>()` - 包装为只读列表
+- `AsOrToArray<T>()` - 转换或强转为数组
+
+#### 字典扩展
+- `EmptyIfNull<TKey, TValue>()` - null时返回空字典
+- `GetOrAdd<TKey, TValue>()` - 获取或添加值
+- `GetOrCreate<TKey, TValue>()` - 获取或创建新实例
+- `Put<TKey, TValue>()` - 设置值并返回旧值
+- `PutAll<TKey, TValue>()` - 批量设置键值对
+- `AddRange<TKey, TValue>()` - 批量添加键值对
+- `TryAddRange<TKey, TValue>()` - 尝试批量添加
+- `AddOrUpdate<TKey, TValue>()` - 添加或更新值
+- `AddOrUpdateRange<TKey, TValue>()` - 批量添加或更新
+- `RemoveKeys<TKey, TValue>()` - 批量删除指定键
+- `TryGetNestedValue()` - 从嵌套字典获取值
+- `NestedKeys()` / `NestedValues()` - 获取嵌套字典的所有键/值
+- `Swap<TKey, TValue>()` - 交换两个键对应的值
+- `Shuffle<TKey, TValue>()` - 随机打乱字典值的顺序
 
 ### 字符串扩展 (`UltraTool.Text`)
 

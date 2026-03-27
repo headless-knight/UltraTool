@@ -17,7 +17,7 @@ public static class DictionaryExtensions
     /// </summary>
     /// <param name="dict">字典</param>
     /// <returns>原字典或空字典</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyDictionary<TKey, TValue> EmptyIfNull<TKey, TValue>(
         this IReadOnlyDictionary<TKey, TValue>? dict) where TKey : notnull =>
@@ -531,16 +531,18 @@ public static class DictionaryExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Shuffle<TKey, TValue>(this IDictionary<TKey, TValue> dict) => RandomHelper.Shared.Shuffle(dict);
 
+#if !NET9_0_OR_GREATER
     /// <summary>
     /// 将字典转为只读字典
     /// </summary>
     /// <param name="dict">字典</param>
     /// <returns>只读字典</returns>
-    [Pure, CollectionAccess(CollectionAccessType.Read)]
+    [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this IDictionary<TKey, TValue> dict)
         where TKey : notnull =>
         dict as IReadOnlyDictionary<TKey, TValue> ?? new ReadOnlyDictionaryBridge<TKey, TValue>(dict);
+#endif
 
     /// <summary>只读字典桥接</summary>
     private sealed class ReadOnlyDictionaryBridge<TKey, TValue>(IDictionary<TKey, TValue> dict)
@@ -564,24 +566,24 @@ public static class DictionaryExtensions
         public TValue this[TKey key] => dict[key];
 
         /// <inheritdoc />
-        [Pure, CollectionAccess(CollectionAccessType.Read)]
+        [CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsKey(TKey key) => dict.ContainsKey(key);
 
 #pragma warning disable CS8767
         /// <inheritdoc />
-        [Pure, CollectionAccess(CollectionAccessType.Read)]
+        [CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) => dict.TryGetValue(key, out value);
 #pragma warning restore CS8767
 
         /// <inheritdoc />
-        [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+        [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => dict.GetEnumerator();
 
         /// <inheritdoc />
-        [Pure, MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
+        [MustDisposeResource, CollectionAccess(CollectionAccessType.Read)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

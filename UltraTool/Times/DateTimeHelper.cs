@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
+using UltraTool.Helpers;
 
 namespace UltraTool.Times;
 
@@ -208,6 +208,221 @@ public static class DateTimeHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetDayAmount(int year, int month) => DateTime.DaysInMonth(year, month);
 
+    #region 获取时刻
+
+    /// <summary>
+    /// 获取当前时刻后的下一个指定时刻
+    /// </summary>
+    /// <param name="moment">时刻</param>
+    /// <returns>下一个指定时刻</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTimeOffset GetNextMoment(TimeSpan moment) => GetNextMoment(DateTimeOffset.Now, moment);
+
+    /// <summary>
+    /// 获取日期时间后的下一个指定时刻
+    /// </summary>
+    /// <param name="afterThis">基准日期时间</param>
+    /// <param name="moment">时刻</param>
+    /// <returns>下一个指定时刻</returns>
+    public static DateTimeOffset GetNextMoment(DateTimeOffset afterThis, TimeSpan moment)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(moment.TotalMilliseconds, OneDayMilliseconds);
+        var nextMoment = new DateTimeOffset(afterThis.Date.Add(moment), afterThis.Offset);
+        return nextMoment > afterThis ? nextMoment : nextMoment.AddDays(1);
+    }
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 获取日期时间后的下一个指定周几时刻
+    /// </summary>
+    /// <param name="afterThis">基准日期时间</param>
+    /// <param name="dayOfWeek">周几，范围[1,7]，1为周一</param>
+    /// <param name="moment">时刻</param>
+    /// <returns>下一个指定时刻</returns>
+    public static DateTimeOffset GetNextWeekMoment(DateTimeOffset afterThis, int dayOfWeek, TimeSpan moment)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(moment.TotalMilliseconds, OneDayMilliseconds);
+        var weekDate = GetDayOfWeek(dayOfWeek, afterThis.GetDateOnly());
+        var nextMoment = OffsetOf(weekDate, moment.AsTimeOnly(), afterThis.Offset);
+        return nextMoment > afterThis ? nextMoment : nextMoment.AddDays(7);
+    }
+
+    /// <summary>
+    /// 获取日期时间后的下一个指定月几号时刻
+    /// </summary>
+    /// <param name="afterThis">基准日期时间</param>
+    /// <param name="dayOfMonth">几号，范围[1,28|29|30|31]，负数为倒数第几天</param>
+    /// <param name="moment"></param>
+    /// <returns>下一个指定时刻</returns>
+    public static DateTimeOffset GetNextMonthMoment(DateTimeOffset afterThis, int dayOfMonth, TimeSpan moment)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThanOrEqual(moment.TotalMilliseconds, OneDayMilliseconds);
+        var yearMonth = afterThis.GetYearMonth();
+        var monthDate = GetDayOfMonth(dayOfMonth, yearMonth);
+        var nextMoment = OffsetOf(monthDate, moment.AsTimeOnly(), afterThis.Offset);
+        // 计算出的日期时间大于基准日期时间，则返回计算出的日期时间
+        if (nextMoment > afterThis) return nextMoment;
+
+        // 如果是几号正数，则返回下个月的日期时间
+        if (dayOfMonth > 0) return nextMoment.AddMonths(1);
+
+        // 如果是几号负数，则添加下个月的天数
+        var nextMonthDayAmount = yearMonth.AddMonths(1).GetDayAmount();
+        return nextMoment.AddDays(nextMonthDayAmount);
+    }
+#endif
+
+    #endregion
+
+    #region 周日期
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 获取当前周的指定周几日期
+    /// </summary>
+    /// <param name="dayOfWeek">周几，范围[1,7]，1为周一</param>
+    /// <returns>周几日期</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateOnly GetDayOfWeek(int dayOfWeek) =>
+        GetDayOfWeek(dayOfWeek, NowDateOnly);
+
+    /// <summary>
+    /// 获取指定周的指定周几日期
+    /// </summary>
+    /// <param name="dayOfWeek">周几，范围[1,7]，1为周一</param>
+    /// <param name="date">指定周任意日期，用于界定指定周</param>
+    /// <returns>周几日期</returns>
+    public static DateOnly GetDayOfWeek(int dayOfWeek, DateOnly date)
+    {
+        if (dayOfWeek is < 1 or > 7)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, "周几范围必须在1到7之间");
+        }
+
+        return date.AddDays(dayOfWeek - date.DayOfWeek.TodayOfWeek());
+    }
+
+    /// <summary>
+    /// 获取当前周的周一日期
+    /// </summary>
+    /// <returns>周一日期</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateOnly GetMondayOfWeek() => GetMondayOfWeek(NowDateOnly);
+
+    /// <summary>
+    /// 获取指定周的周一日期
+    /// </summary>
+    /// <param name="date">指定周任意日期，用于界定指定周</param>
+    /// <returns>周一日期</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateOnly GetMondayOfWeek(DateOnly date) => GetDayOfWeek(1, date);
+
+    /// <summary>
+    /// 获取当前周的周日日期
+    /// </summary>
+    /// <returns>周日日期</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateOnly GetSundayOfWeek() => GetSundayOfWeek(NowDateOnly);
+
+    /// <summary>
+    /// 获取指定周的周日日期
+    /// </summary>
+    /// <param name="date">指定周任意日期，用于界定指定周</param>
+    /// <returns>周日日期</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateOnly GetSundayOfWeek(DateOnly date) => GetDayOfWeek(7, date);
+
+    /// <summary>
+    /// 获取当前日期是当周周几，周一为1，周日为7
+    /// </summary>
+    /// <returns>周几</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetTodayOfWeek() => NowDateOnly.TodayOfWeek();
+
+    /// <summary>
+    /// 获取当前日期是当周周几，周一为1，周日为7
+    /// </summary>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>周几</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetTodayOfWeek(TimeOnly criticalValue) =>
+        DateTimeOffset.Now.TodayOfWeek(criticalValue);
+
+    /// <summary>
+    /// 获取当前日期是当周周几，周一为1，周日为7
+    /// </summary>
+    /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
+    /// <returns>周几</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetTodayOfWeek(TimeSpan criticalValue) =>
+        DateTimeOffset.Now.TodayOfWeek(criticalValue);
+
+    /// <summary>
+    /// 获取指定日期是当周周几，周一为1，周日为7
+    /// </summary>
+    /// <returns>周几</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetTodayOfWeek(int year, int month, int day) =>
+        new DateOnly(year, month, day).TodayOfWeek();
+#endif
+
+    #endregion
+
+    #region 月日期
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 获取指定年月的指定几号的日期
+    /// </summary>
+    /// <param name="dayOfMonth">几号，负数为倒数第几天</param>
+    /// <param name="yearMonth"></param>
+    /// <returns>日期</returns>
+    public static DateOnly GetDayOfMonth(int dayOfMonth, YearMonth yearMonth)
+    {
+        ArgumentOutOfRangeHelper.ThrowIfZero(dayOfMonth);
+        var dayAmount = yearMonth.GetDayAmount();
+        ArgumentOutOfRangeHelper.ThrowIfGreaterThan(Math.Abs(dayOfMonth), dayAmount, nameof(dayOfMonth));
+        return dayOfMonth > 0 ? yearMonth.ToDateOnly(dayOfMonth) : yearMonth.ToDateOnly(dayAmount + dayOfMonth + 1);
+    }
+#endif
+
+    #endregion
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// 将日期与时间转化为日期时间
+    /// </summary>
+    /// <param name="date">日期</param>
+    /// <param name="time">时间</param>
+    /// <param name="kind">日期时间种类，默认为本地</param>
+    /// <returns>日期时间</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTime Of(DateOnly date, TimeOnly time, DateTimeKind kind = DateTimeKind.Local) =>
+        new(date.Year, date.Month, date.Day, time.Hour, time.Minute, time.Second, time.Millisecond, kind);
+
+    /// <summary>
+    /// 将日期与时间转化为偏移日期时间
+    /// </summary>
+    /// <param name="date">日期</param>
+    /// <param name="time">时间</param>
+    /// <param name="offset">时间偏移量</param>
+    /// <returns>日期时间</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTimeOffset OffsetOf(DateOnly date, TimeOnly time, TimeSpan offset) =>
+        new(date.Year, date.Month, date.Day, time.Hour, time.Minute, time.Second, time.Millisecond, offset);
+
+    /// <summary>
+    /// 将日期与时间转化为偏移日期时间
+    /// </summary>
+    /// <param name="date">日期</param>
+    /// <param name="time">时间</param>
+    /// <param name="kind">日期时间种类，默认为本地</param>
+    /// <returns>偏移日期时间</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DateTimeOffset OffsetOf(DateOnly date, TimeOnly time, DateTimeKind kind = DateTimeKind.Local) =>
+        new(Of(date, time, kind));
+#endif
+
     /// <summary>
     /// 判断时刻是否为上午
     /// </summary>
@@ -232,15 +447,14 @@ public static class DateTimeHelper
     /// <param name="month">月份</param>
     /// <param name="day">天数</param>
     /// <returns>是否为有效月日</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsValidMonthDay(int month, int day) => month switch
+    public static bool IsValidMonthDay(int month, int day) => day > 0 && (month switch
     {
         1 or 3 or 5 or 7 or 8 or 10 or 12 => day <= 31,
         4 or 6 or 9 or 11 => day <= 30,
         2 => day <= 29,
         _ => false
-    };
+    });
 
     /// <summary>
     /// 判断是否为有效日期
@@ -249,11 +463,10 @@ public static class DateTimeHelper
     /// <param name="month">月份</param>
     /// <param name="day">天数</param>
     /// <returns>是否为有效日期</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsValidDate(int year, int month, int day) => month == 2
+    public static bool IsValidDate(int year, int month, int day) => day > 0 && (month == LeapMonth
         ? (IsLeapYear(year) ? day <= 29 : day <= 28)
-        : IsValidMonthDay(month, day);
+        : IsValidMonthDay(month, day));
 
     /// <summary>
     /// 拼接日期为数字
@@ -262,7 +475,6 @@ public static class DateTimeHelper
     /// <param name="month">月份</param>
     /// <param name="day">日期</param>
     /// <returns>year * 10000 + month * 100 + day</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int SpliceDateNumber(int year, int month, int day) =>
         year * 10000 + month * 100 + day;
@@ -272,7 +484,6 @@ public static class DateTimeHelper
     /// </summary>
     /// <param name="date">year * 10000 + month * 100 + day</param>
     /// <returns>(年份, 月份, 日期)</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (int Year, int Month, int Day) SplitDateNumber(int date) =>
         (date / 10000, date / 100 % 100, date % 100);
@@ -288,7 +499,6 @@ public static class DateTimeHelper
     /// <param name="date1">日期1</param>
     /// <param name="date2">日期2</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameDay(DateOnly date1, DateOnly date2) =>
         date1.DayNumber == date2.DayNumber;
@@ -300,7 +510,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameDay(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
         IsSameDay(dt1, dt2, criticalValue.AsTimeSpan());
@@ -312,7 +521,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
         IsSameDay(offset1, offset2, criticalValue.AsTimeSpan());
@@ -324,7 +532,6 @@ public static class DateTimeHelper
     /// <param name="dt1">日期时间1</param>
     /// <param name="dt2">日期时间2</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameDay(DateTime dt1, DateTime dt2) =>
         dt1.Year == dt2.Year && dt1.Month == dt2.Month && dt1.Day == dt2.Day;
@@ -336,7 +543,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     public static bool IsSameDay(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
     {
         if (dt1.TimeOfDay < criticalValue)
@@ -358,7 +564,6 @@ public static class DateTimeHelper
     /// <param name="offset1">日期时间1</param>
     /// <param name="offset2">日期时间2</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2) =>
         offset1.Year == offset2.Year && offset1.Month == offset2.Month && offset1.Day == offset2.Day;
@@ -370,7 +575,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一天</returns>
-    [Pure]
     public static bool IsSameDay(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
     {
         if (offset1.TimeOfDay < criticalValue)
@@ -380,7 +584,7 @@ public static class DateTimeHelper
 
         if (offset2.TimeOfDay < criticalValue)
         {
-            offset2 = offset1.AddDays(-1);
+            offset2 = offset2.AddDays(-1);
         }
 
         return IsSameDay(offset1, offset2);
@@ -397,10 +601,9 @@ public static class DateTimeHelper
     /// <param name="date1">日期1</param>
     /// <param name="date2">日期2</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameWeek(DateOnly date1, DateOnly date2) =>
-        IsSameDay(date1.AsDateTime(), date2.AsDateTime());
+        IsSameWeek(date1.AsDateTime(), date2.AsDateTime());
 
     /// <summary>
     /// 判断两个日期时间是否同一周
@@ -409,7 +612,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameWeek(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
         IsSameWeek(dt1, dt2, criticalValue.AsTimeSpan());
@@ -421,7 +623,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
         IsSameWeek(offset1, offset2, criticalValue.AsTimeSpan());
@@ -433,10 +634,9 @@ public static class DateTimeHelper
     /// <param name="dt1">日期时间1</param>
     /// <param name="dt2">日期时间2</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     public static bool IsSameWeek(DateTime dt1, DateTime dt2)
     {
-        var calendar = CultureInfo.CurrentCulture.Calendar;
+        var calendar = CultureInfo.InvariantCulture.Calendar;
         // 周一作为每周第一天计算
         return calendar.GetWeekOfYear(dt1, CalendarWeekRule.FirstDay, DayOfWeek.Monday)
                == calendar.GetWeekOfYear(dt2, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
@@ -449,7 +649,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     public static bool IsSameWeek(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
     {
         if (dt1.TodayOfWeek() == 1 && dt1.TimeOfDay < criticalValue)
@@ -471,10 +670,9 @@ public static class DateTimeHelper
     /// <param name="offset1">日期时间1</param>
     /// <param name="offset2">日期时间2</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2)
     {
-        var calendar = CultureInfo.CurrentCulture.Calendar;
+        var calendar = CultureInfo.InvariantCulture.Calendar;
         // 周一作为每周第一天计算
         return calendar.GetWeekOfYear(offset1.DateTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)
                == calendar.GetWeekOfYear(offset2.DateTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
@@ -487,7 +685,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否同一周</returns>
-    [Pure]
     public static bool IsSameWeek(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
     {
         if (offset1.TodayOfWeek() == 1 && offset1.TimeOfDay < criticalValue)
@@ -514,7 +711,6 @@ public static class DateTimeHelper
     /// <param name="date1">日期1</param>
     /// <param name="date2">日期2</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameMonth(DateOnly date1, DateOnly date2) =>
         date1.Year == date2.Year && date1.Month == date2.Month;
@@ -526,7 +722,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameMonth(DateTime dt1, DateTime dt2, TimeOnly criticalValue) =>
         IsSameMonth(dt1, dt2, criticalValue.AsTimeSpan());
@@ -538,7 +733,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2, TimeOnly criticalValue) =>
         IsSameMonth(offset1, offset2, criticalValue.AsTimeSpan());
@@ -550,7 +744,6 @@ public static class DateTimeHelper
     /// <param name="dt1">日期时间1</param>
     /// <param name="dt2">日期时间2</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameMonth(DateTime dt1, DateTime dt2) =>
         dt1.Year == dt2.Year && dt1.Month == dt2.Month;
@@ -562,7 +755,6 @@ public static class DateTimeHelper
     /// <param name="dt2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     public static bool IsSameMonth(DateTime dt1, DateTime dt2, TimeSpan criticalValue)
     {
         if (dt1.Day == 1 && dt1.TimeOfDay < criticalValue)
@@ -584,7 +776,6 @@ public static class DateTimeHelper
     /// <param name="offset1">日期时间1</param>
     /// <param name="offset2">日期时间2</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2) =>
         offset1.Year == offset2.Year && offset1.Month == offset2.Month;
@@ -596,7 +787,6 @@ public static class DateTimeHelper
     /// <param name="offset2">日期时间2</param>
     /// <param name="criticalValue">临界值，时间小于此值视作前一天</param>
     /// <returns>是否为同一月</returns>
-    [Pure]
     public static bool IsSameMonth(DateTimeOffset offset1, DateTimeOffset offset2, TimeSpan criticalValue)
     {
         if (offset1.Day == 1 && offset1.TimeOfDay < criticalValue)

@@ -16,13 +16,19 @@ public static class SetExtensions
     /// <returns>原集合或空集合</returns>
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyCollection<T> EmptyIfNull<T>(
+    public static
 #if NET5_0_OR_GREATER
-        this IReadOnlySet<T>? set
+        IReadOnlySet<T>
+#else
+        IReadOnlyCollection<T>
+#endif
+        EmptyIfNull<T>(
+#if NET5_0_OR_GREATER
+            this IReadOnlySet<T>? set
 #else
         this HashSet<T>? set
 #endif
-    ) => set != null ? set : ReadOnlySetBridge<T>.Empty;
+        ) => set != null ? set : ReadOnlySetBridge<T>.Empty;
 
     /// <summary>
     /// 批量添加元素
@@ -34,7 +40,7 @@ public static class SetExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int AddRange<T>(this ISet<T> set, [InstantHandle] IEnumerable<T> range) => range.Count(set.Add);
 
-#if !NET5_0_OR_GREATER
+#if !NET9_0_OR_GREATER
     /// <summary>
     /// 将集合转化为只读集合
     /// </summary>
@@ -42,8 +48,20 @@ public static class SetExtensions
     /// <returns>只读集合</returns>
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyCollection<T> AsReadOnly<T>(this ISet<T> set) =>
-        set as IReadOnlyCollection<T> ?? new ReadOnlySetBridge<T>(set);
+    public static
+#if NET5_0_OR_GREATER
+        IReadOnlySet<T>
+#else
+        IReadOnlyCollection<T>
+#endif
+        AsReadOnly<T>(this ISet<T> set) =>
+        set as
+#if NET5_0_OR_GREATER
+            IReadOnlySet<T>
+#else
+        IReadOnlyCollection<T>
+#endif
+        ?? new ReadOnlySetBridge<T>(set);
 #endif
 
     /// <summary>只读集合桥接</summary>

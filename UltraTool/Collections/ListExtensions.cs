@@ -382,6 +382,7 @@ public static class ListExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] AsOrToArray<T>(this IList<T> list) => list as T[] ?? list.ToArray();
 
+#if !NET9_0_OR_GREATER
     /// <summary>
     /// 将一个列表接口类型转换为列表，若非列表则拷贝为列表
     /// </summary>
@@ -390,6 +391,7 @@ public static class ListExtensions
     [CollectionAccess(CollectionAccessType.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static List<T> AsOrToList<T>(this IList<T> list) => list as List<T> ?? list.ToList();
+#endif
 
     /// <summary>只读列表桥接</summary>
     private sealed class ReadOnlyListBridge<T>(IList<T> list) : IReadOnlyList<T>
