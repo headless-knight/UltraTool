@@ -7,7 +7,6 @@ namespace UltraTool.Extensions;
 /// <summary>
 /// 任务拓展类
 /// </summary>
-[PublicAPI]
 public static class TaskExtensions
 {
     /// <summary>

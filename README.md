@@ -433,6 +433,50 @@ var sw4 = ValueStopwatch.StartNew(TimeSpan.FromSeconds(5));
 Console.WriteLine(sw4.ElapsedMilliseconds); // ≈ 5000（从5秒开始计时）
 ```
 
+### 任务扩展 - 便捷的异步任务操作
+
+```csharp
+using UltraTool.Extensions;
+
+// 忽略返回值（即发即忘，避免编译器警告）
+SomeAsyncMethod().IgnoreResult();
+new ValueTask(SomeAsyncMethod()).IgnoreResult();
+
+// 忽略异常（任务异常时静默处理）
+Task safeTask = SomeRiskyAsyncMethod().IgnoreException();
+ValueTask safeValueTask = new ValueTask(SomeRiskyAsyncMethod()).IgnoreException();
+
+// 上述任务抛出异常时都会被忽略，避免线程崩溃。
+// 如果需要打印异常信息，可以订阅异常事件，TaskHelper.IgnoreExceptionCaught
+TaskHelper.IgnoreExceptionCaught += (exception) => Console.WriteLine(exception.Message);
+
+// 同步获取 ValueTask 结果
+ValueTask<int> valueTask = GetValueAsync();
+int result = valueTask.GetResult();          // 已完成则直接取值，否则阻塞等待
+
+// 批量等待任务
+var tasks = new[] { Task.Delay(100), Task.Delay(200), Task.Delay(300) };
+await tasks.WhenAll();                       // 等待全部任务完成
+await tasks.WhenAny();                       // 等待任意一个任务完成
+
+// 等待全部任务并收集返回值
+var dataTasks = new[] { FetchDataAsync(1), FetchDataAsync(2), FetchDataAsync(3) };
+string[] results = await dataTasks.AwaitAll();  // 等待全部完成并返回结果数组
+
+// 字典形式的批量任务等待
+var taskDict = new Dictionary<string, Task<int>>
+{
+    ["userCount"] = GetUserCountAsync(),
+    ["orderCount"] = GetOrderCountAsync()
+};
+Dictionary<string, int> dictResults = await taskDict.AwaitAll(); // {键:返回值}字典
+
+// ValueTask 批量等待
+var valueTasks = new[] { ComputeAsync(1), ComputeAsync(2) };
+await valueTasks.WhenAll();                   // 等待全部 ValueTask 完成
+int[] valueResults = await valueTasks.AwaitAll(); // 收集全部 ValueTask 返回值
+```
+
 ## 📚 API 参考手册
 
 ### 集合扩展 (`UltraTool.Collections`)
@@ -638,6 +682,25 @@ Console.WriteLine(sw4.ElapsedMilliseconds); // ≈ 5000（从5秒开始计时）
 - `Elapsed` / `ElapsedTicks` / `ElapsedMilliseconds` - 获取耗时
 - `Start()` / `Stop()` / `Restart()` / `Reset()` - 控制秒表
 
+### 任务扩展 (`UltraTool.Extensions`)
+
+#### 忽略操作
+- `IgnoreResult(Task)` / `IgnoreResult(ValueTask)` - 忽略任务返回值（即发即忘）
+- `IgnoreException(Task)` / `IgnoreException(ValueTask)` - 忽略任务异常
+
+#### 同步获取结果
+- `GetResult(ValueTask)` - 同步获取 ValueTask 结果
+- `GetResult<T>(ValueTask<T>)` - 同步获取带返回值的 ValueTask 结果
+
+#### 批量等待
+- `WhenAny(IEnumerable<Task>)` - 等待任意一个任务完成
+- `WhenAll(IEnumerable<Task>)` - 等待全部 Task 完成
+- `WhenAll(IEnumerable<ValueTask>)` - 等待全部 ValueTask 完成
+- `AwaitAll<T>(IEnumerable<Task<T>>)` - 等待全部任务并返回结果数组
+- `AwaitAll<T>(IEnumerable<ValueTask<T>>)` - 等待全部 ValueTask 并返回结果数组
+- `AwaitAll<TKey, TValue>(IEnumerable<KeyValuePair>)` - 等待键值对任务并返回结果数组
+- `AwaitAll<TKey, TValue>(IReadOnlyDictionary)` - 等待字典任务并返回结果字典
+
 ## 🔧 性能优化特性
 
 - **池化内存**：使用 `PooledArray<T>` 和 `PooledDynamicArray<T>` 减少内存分配，底层基于 `ArrayPool<T>`
@@ -653,7 +716,7 @@ Console.WriteLine(sw4.ElapsedMilliseconds); // ≈ 5000（从5秒开始计时）
 欢迎提交 Issue 和 Pull Request 来改进这个项目！
 
 ### 开发环境要求
-- .NET 8.0 SDK 或更高版本
+- .NET 10.0 SDK 或更高版本
 - JetBrains Annotations 支持
 
 ### 代码规范

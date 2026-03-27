@@ -1,13 +1,14 @@
 ﻿using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+#if !NET6_0_OR_GREATER
 using UltraTool.Collections;
+#endif
 
 namespace UltraTool.Helpers;
 
 /// <summary>
 /// 任务帮助类
 /// </summary>
-[PublicAPI]
 public static class TaskHelper
 {
     /// <summary>
